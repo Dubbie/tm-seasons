@@ -116,6 +116,30 @@ class TrackmaniaClientTest extends TestCase
         app(TrackmaniaTokenService::class)->getToken();
     }
 
+    public function test_non_json_token_response_throws_exception(): void
+    {
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::response('plain-text', 200),
+        ]);
+
+        $this->expectException(TrackmaniaTokenException::class);
+        $this->expectExceptionMessage('Trackmania token response was not valid JSON.');
+
+        app(TrackmaniaTokenService::class)->getToken();
+    }
+
+    public function test_token_response_without_access_token_throws_exception(): void
+    {
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::response(['expiresIn' => 3600], 200),
+        ]);
+
+        $this->expectException(TrackmaniaTokenException::class);
+        $this->expectExceptionMessage('did not include accessToken');
+
+        app(TrackmaniaTokenService::class)->getToken();
+    }
+
     public function test_leaderboard_score_of_minus_one_is_preserved(): void
     {
         Http::fake([
@@ -147,7 +171,7 @@ class TrackmaniaClientTest extends TestCase
                 'memberCount' => 2,
                 'iconUrl' => 'https://example.com/icon.png',
             ], 200),
-            'live-services.trackmania.nadeo.live/api/token/club/12345/member' => Http::response([
+            'live-services.trackmania.nadeo.live/api/token/club/12345/member*' => Http::response([
                 'clubMemberList' => [
                     ['accountId' => 'player-1', 'displayName' => 'Player One', 'zone' => ['zoneId' => 'world', 'name' => 'World']],
                 ],
@@ -162,5 +186,111 @@ class TrackmaniaClientTest extends TestCase
         $this->assertSame('Test Club', $club['name']);
         $this->assertCount(1, $members);
         $this->assertSame('player-1', $members[0]['account_id']);
+    }
+
+    public function test_token_refreshes_after_payload_driven_ttl(): void
+    {
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::sequence()
+                ->push(['accessToken' => 'token-1', 'expiresIn' => 61], 200)
+                ->push(['accessToken' => 'token-2', 'expiresIn' => 61], 200),
+        ]);
+
+        $service = app(TrackmaniaTokenService::class);
+
+        $first = $service->getToken();
+        $this->assertSame('token-1', $first);
+
+        $this->travel(2)->seconds();
+
+        $second = $service->getToken();
+        $this->assertSame('token-2', $second);
+    }
+
+    public function test_get_club_members_does_not_fallback_to_other_variants_on_rate_limit(): void
+    {
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::response(['accessToken' => 'token-123'], 200),
+            'live-services.trackmania.nadeo.live/api/token/club/12345/member*' => Http::response(['error' => 'rate_limited'], 429),
+            'live-services.trackmania.nadeo.live/api/token/club/12345/members*' => Http::response(['clubMemberList' => []], 200),
+        ]);
+
+        try {
+            app(TrackmaniaClient::class)->getClubMembers('12345');
+            $this->fail('Expected TrackmaniaClientException to be thrown.');
+        } catch (TrackmaniaClientException $exception) {
+            $this->assertStringContainsString('status [429]', $exception->getMessage());
+        }
+
+        Http::assertSentCount(4);
+    }
+
+    public function test_get_club_members_falls_back_on_404_and_uses_members_endpoint(): void
+    {
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::response(['accessToken' => 'token-123'], 200),
+            'live-services.trackmania.nadeo.live/api/token/club/12345/member?length=100&offset=0' => Http::response([], 404),
+            'live-services.trackmania.nadeo.live/api/token/club/12345/member' => Http::response([], 404),
+            'live-services.trackmania.nadeo.live/api/token/club/12345/members?length=100&offset=0' => Http::response([
+                'clubMemberList' => [
+                    ['accountId' => 'player-1', 'displayName' => 'Player One'],
+                ],
+            ], 200),
+        ]);
+
+        $members = app(TrackmaniaClient::class)->getClubMembers('12345');
+
+        $this->assertCount(1, $members);
+        $this->assertSame('player-1', $members[0]['account_id']);
+    }
+
+    public function test_token_ttl_falls_back_to_jwt_exp_when_expires_in_missing(): void
+    {
+        $payload = rtrim(strtr(base64_encode(json_encode(['exp' => now()->timestamp + 120])), '+/', '-_'), '=');
+        $token = sprintf('a.%s.c', $payload);
+
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::sequence()
+                ->push(['accessToken' => $token], 200)
+                ->push(['accessToken' => 'token-2', 'expiresIn' => 3600], 200),
+        ]);
+
+        $service = app(TrackmaniaTokenService::class);
+
+        $first = $service->getToken();
+        $this->assertSame($token, $first);
+
+        $this->travel(59)->seconds();
+        $second = $service->getToken();
+        $this->assertSame($token, $second);
+
+        $this->travel(2)->seconds();
+        $third = $service->getToken();
+        $this->assertSame('token-2', $third);
+    }
+
+    public function test_token_ttl_falls_back_to_config_when_token_is_not_jwt_and_expires_in_missing(): void
+    {
+        config()->set('trackmania.token_cache_ttl_fallback', 120);
+        config()->set('trackmania.token_expiry_skew_seconds', 60);
+
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::sequence()
+                ->push(['accessToken' => 'plain-token'], 200)
+                ->push(['accessToken' => 'next-token', 'expiresIn' => 3600], 200),
+        ]);
+
+        $service = app(TrackmaniaTokenService::class);
+
+        $first = $service->getToken();
+        $this->assertSame('plain-token', $first);
+
+        $this->travel(59)->seconds();
+        $second = $service->getToken();
+        $this->assertSame('plain-token', $second);
+
+        $this->travel(2)->seconds();
+        $third = $service->getToken();
+        $this->assertSame('next-token', $third);
     }
 }

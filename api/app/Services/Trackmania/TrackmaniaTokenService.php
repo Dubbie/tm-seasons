@@ -30,33 +30,38 @@ class TrackmaniaTokenService
         $audience = $audience ?: (string) config('trackmania.audience', self::AUDIENCE_DEFAULT);
         $cacheKey = $this->cacheKey($audience);
 
-        return Cache::remember($cacheKey, $this->cacheTtlSeconds(), function () use ($audience): string {
-            $response = $this->request()
-                ->post($this->tokenEndpoint(), ['audience' => $audience]);
+        $cached = Cache::get($cacheKey);
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
 
-            if (! $response->successful()) {
-                $snippet = mb_substr((string) $response->body(), 0, 240);
-                throw new TrackmaniaTokenException(sprintf(
-                    'Failed to retrieve Trackmania token (status %d, method basic). Response: %s',
-                    $response->status(),
-                    $snippet === '' ? '[empty]' : $snippet,
-                ));
-            }
+        $response = $this->request()
+            ->post($this->tokenEndpoint(), ['audience' => $audience]);
 
-            $payload = $response->json();
+        if (! $response->successful()) {
+            $snippet = mb_substr((string) $response->body(), 0, 240);
+            throw new TrackmaniaTokenException(sprintf(
+                'Failed to retrieve Trackmania token (status %d, method basic). Response: %s',
+                $response->status(),
+                $snippet === '' ? '[empty]' : $snippet,
+            ));
+        }
 
-            if (! is_array($payload)) {
-                throw new TrackmaniaTokenException('Trackmania token response was not valid JSON.');
-            }
+        $payload = $response->json();
 
-            $token = $payload['accessToken'] ?? $payload['access_token'] ?? null;
+        if (! is_array($payload)) {
+            throw new TrackmaniaTokenException('Trackmania token response was not valid JSON.');
+        }
 
-            if (! is_string($token) || $token === '') {
-                throw new TrackmaniaTokenException('Trackmania token response did not include accessToken.');
-            }
+        $token = $payload['accessToken'] ?? $payload['access_token'] ?? null;
 
-            return $token;
-        });
+        if (! is_string($token) || $token === '') {
+            throw new TrackmaniaTokenException('Trackmania token response did not include accessToken.');
+        }
+
+        Cache::put($cacheKey, $token, $this->ttlFromPayload($payload));
+
+        return $token;
     }
 
     private function request(): PendingRequest

@@ -93,8 +93,9 @@ class TrackmaniaClient
 
             $response = null;
 
-            foreach ($attempts as [$pathTemplate, $query]) {
-                $candidate = $this->request()->get(sprintf($pathTemplate, urlencode($clubId)), $query);
+            foreach ($attempts as $index => [$pathTemplate, $query]) {
+                $candidate = $this->request($index === 0 ? null : 1)
+                    ->get(sprintf($pathTemplate, urlencode($clubId)), $query);
 
                 if ($candidate->successful()) {
                     $response = $candidate;
@@ -103,6 +104,10 @@ class TrackmaniaClient
                 }
 
                 $response = $candidate;
+
+                if (! $this->shouldTryNextClubMembersVariant($candidate)) {
+                    break;
+                }
             }
 
             if (! $response instanceof Response) {
@@ -148,16 +153,17 @@ class TrackmaniaClient
         }, $allMembers)));
     }
 
-    private function request(): PendingRequest
+    private function request(?int $retryTimes = null): PendingRequest
     {
         $baseUrl = rtrim((string) config('trackmania.base_url', self::BASE_URL_DEFAULT), '/');
         $token = $this->tokenService->getToken((string) config('trackmania.audience', self::AUDIENCE_DEFAULT));
+        $resolvedRetryTimes = $retryTimes ?? (int) config('trackmania.retry_times', self::RETRY_TIMES_DEFAULT);
 
         return Http::baseUrl($baseUrl)
             ->acceptJson()
             ->withUserAgent((string) config('trackmania.user_agent', self::USER_AGENT_DEFAULT))
             ->retry(
-                (int) config('trackmania.retry_times', self::RETRY_TIMES_DEFAULT),
+                max(1, $resolvedRetryTimes),
                 (int) config('trackmania.retry_sleep_ms', self::RETRY_SLEEP_MS_DEFAULT),
                 throw: false,
             )
@@ -165,6 +171,11 @@ class TrackmaniaClient
             ->withHeaders([
                 'Authorization' => sprintf('nadeo_v1 t=%s', $token),
             ]);
+    }
+
+    private function shouldTryNextClubMembersVariant(Response $response): bool
+    {
+        return in_array($response->status(), [404, 405], true);
     }
 
     private function ensureSuccessful(Response $response, string $resource, string $identifier): void

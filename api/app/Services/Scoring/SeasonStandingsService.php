@@ -60,17 +60,17 @@ class SeasonStandingsService
         $uniqueMaps = $events->pluck('map_id')->filter()->unique()->count();
         $eventTypes = $events->pluck('type')->countBy()->toArray();
 
+        $playerTotal = (int) DB::table('point_events')
+            ->where('season_id', $season->id)
+            ->where('trackmania_player_id', $playerId)
+            ->sum('points');
+
         $position = DB::table('point_events')
             ->where('season_id', $season->id)
             ->select('trackmania_player_id')
             ->selectRaw('SUM(points) as total')
             ->groupBy('trackmania_player_id')
-            ->having('total', '>', function ($query) use ($season, $playerId): void {
-                $query->selectRaw('SUM(points)')
-                    ->from('point_events')
-                    ->where('season_id', $season->id)
-                    ->where('trackmania_player_id', $playerId);
-            })
+            ->havingRaw('SUM(points) > ?', [$playerTotal])
             ->count() + 1;
 
         return [
