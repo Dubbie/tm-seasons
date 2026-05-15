@@ -2,6 +2,7 @@
 
 use App\Exceptions\Trackmania\TrackmaniaClientException;
 use App\Exceptions\Trackmania\TrackmaniaTokenException;
+use App\Models\User;
 use App\Services\Trackmania\TrackmaniaClient;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -41,3 +42,20 @@ Artisan::command('trackmania:test-map {mapUid}', function (string $mapUid): int 
 
     return self::SUCCESS;
 })->purpose('Test Trackmania map and leaderboard API access');
+
+Artisan::command('users:make-admin {discord_id}', function (string $discord_id): int {
+    $user = User::query()->where('discord_id', $discord_id)->first();
+
+    if (! $user) {
+        $this->error(sprintf('User with discord_id [%s] was not found.', $discord_id));
+
+        return self::FAILURE;
+    }
+
+    $user->is_admin = true;
+    $user->save();
+
+    $this->info(sprintf('User [%s] promoted to admin.', $discord_id));
+
+    return self::SUCCESS;
+})->purpose('Promote a user to admin by Discord ID');
