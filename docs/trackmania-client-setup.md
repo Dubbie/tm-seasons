@@ -25,6 +25,7 @@ Set these in `api/.env`:
 ```env
 TRACKMANIA_DEDICATED_LOGIN=your_dedicated_login
 TRACKMANIA_DEDICATED_PASSWORD=your_dedicated_password
+TRACKMANIA_USER_AGENT="tm-bot/1.0 (+https://example.com)"
 TRACKMANIA_AUDIENCE=NadeoLiveServices
 TRACKMANIA_AUTH_BASE_URL=https://prod.trackmania.core.nadeo.online
 TRACKMANIA_BASE_URL=https://live-services.trackmania.nadeo.live
