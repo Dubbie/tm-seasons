@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import { publicSeasons, type ApiSeason } from '@/lib/api'
 
 const seasons = ref<ApiSeason[]>([])
@@ -15,22 +17,34 @@ async function loadSeasons(): Promise<void> {
   }
 }
 
+function statusVariant(status: string): 'neutral' | 'success' | 'warning' {
+  if (status === 'active') return 'success'
+  if (status === 'upcoming') return 'warning'
+  return 'neutral'
+}
+
 onMounted(loadSeasons)
 </script>
 
 <template>
-  <main class="page">
-    <h1>Seasons</h1>
-    <p v-if="loading">Loading...</p>
-    <ul v-else>
-      <li v-for="season in seasons" :key="season.id">
-        <RouterLink :to="`/seasons/${season.slug}`">{{ season.name }}</RouterLink>
-        - {{ season.status }}
-      </li>
-    </ul>
+  <main class="px-4 py-6 sm:px-6">
+    <div class="mx-auto max-w-6xl space-y-4">
+      <UiCard>
+        <h1 class="text-2xl font-semibold text-slate-900">Seasons</h1>
+        <p v-if="loading" class="mt-2 text-sm text-slate-500">Loading...</p>
+      </UiCard>
+
+      <div class="grid gap-3">
+        <UiCard v-for="season in seasons" :key="season.id">
+          <div class="flex items-center gap-2">
+            <RouterLink :to="`/seasons/${season.slug}`" class="text-lg font-semibold text-blue-700 hover:underline">
+              {{ season.name }}
+            </RouterLink>
+            <UiBadge :variant="statusVariant(season.status)">{{ season.status }}</UiBadge>
+          </div>
+          <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
+        </UiCard>
+      </div>
+    </div>
   </main>
 </template>
-
-<style scoped>
-.page { padding: 1.5rem; }
-</style>

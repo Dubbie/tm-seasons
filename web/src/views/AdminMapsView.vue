@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiInput from '@/components/ui/UiInput.vue'
 import { adminMaps, deleteAdminMap, importAdminMap, type ApiMap } from '@/lib/api'
 
 const maps = ref<ApiMap[]>([])
@@ -61,41 +65,47 @@ onMounted(loadMaps)
 </script>
 
 <template>
-  <main class="page">
-    <h1>Admin Maps</h1>
-    <form class="import-form" @submit.prevent="handleImport">
-      <input v-model="uid" placeholder="Map UID" />
-      <button type="submit" :disabled="loading">Import</button>
-    </form>
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="loading">Loading...</p>
+  <main class="px-4 py-6 sm:px-6">
+    <div class="mx-auto max-w-6xl space-y-4">
+      <UiCard>
+        <h1 class="text-2xl font-semibold text-slate-900">Admin Maps</h1>
+        <form class="mt-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="handleImport">
+          <UiInput v-model="uid" placeholder="Map UID" />
+          <UiButton type="submit" :disabled="loading">Import</UiButton>
+        </form>
+        <p v-if="error" class="mt-3 text-sm text-red-700">{{ error }}</p>
+        <p v-if="loading" class="mt-3 text-sm text-slate-500">Loading...</p>
+      </UiCard>
 
-    <section class="list">
-      <article v-for="map in maps" :key="map.id" class="card">
-        <img :src="map.thumbnail_url || 'https://placehold.co/160x90?text=No+Image'" alt="map thumbnail" />
-        <div>
-          <h2>{{ map.name || map.uid }}</h2>
-          <p><strong>Author:</strong> {{ map.author_name || map.author_account_id || 'n/a' }}</p>
-          <p><strong>Style/Type:</strong> {{ map.map_style || 'n/a' }} / {{ map.map_type || 'n/a' }}</p>
-          <p>
-            <strong>Medals:</strong>
-            A {{ formatTime(map.author_time) }},
-            G {{ formatTime(map.gold_time) }},
-            S {{ formatTime(map.silver_time) }},
-            B {{ formatTime(map.bronze_time) }}
-          </p>
-          <button type="button" @click="handleDelete(map.id)">Delete</button>
-        </div>
-      </article>
-    </section>
+      <div class="grid gap-3">
+        <UiCard v-for="map in maps" :key="map.id">
+          <div class="grid gap-4 sm:grid-cols-[160px_1fr]">
+            <img
+              :src="map.thumbnail_url || 'https://placehold.co/160x90?text=No+Image'"
+              alt="map thumbnail"
+              class="h-[90px] w-[160px] rounded-md object-cover"
+            />
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg font-semibold text-slate-900">{{ map.name || map.uid }}</h2>
+                <UiBadge variant="info">{{ map.map_style || 'style n/a' }}</UiBadge>
+                <UiBadge>{{ map.map_type || 'type n/a' }}</UiBadge>
+              </div>
+              <p class="mt-1 text-sm text-slate-700"><strong>Author:</strong> {{ map.author_name || map.author_account_id || 'n/a' }}</p>
+              <p class="mt-1 text-sm text-slate-700">
+                <strong>Medals:</strong>
+                A {{ formatTime(map.author_time) }},
+                G {{ formatTime(map.gold_time) }},
+                S {{ formatTime(map.silver_time) }},
+                B {{ formatTime(map.bronze_time) }}
+              </p>
+              <div class="mt-3">
+                <UiButton variant="danger" size="sm" @click="handleDelete(map.id)">Delete</UiButton>
+              </div>
+            </div>
+          </div>
+        </UiCard>
+      </div>
+    </div>
   </main>
 </template>
-
-<style scoped>
-.page { padding: 1.5rem; }
-.import-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.list { display: grid; gap: 1rem; }
-.card { display: grid; grid-template-columns: 160px 1fr; gap: 1rem; border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; }
-img { width: 160px; height: 90px; object-fit: cover; border-radius: 6px; }
-.error { color: #b00020; }
-</style>

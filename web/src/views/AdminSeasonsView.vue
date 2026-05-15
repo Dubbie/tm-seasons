@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiInput from '@/components/ui/UiInput.vue'
 import { adminSeasons, createAdminSeason, deleteAdminSeason, updateAdminSeason, type ApiSeason } from '@/lib/api'
 
 const seasons = ref<ApiSeason[]>([])
@@ -56,37 +60,43 @@ async function handleDelete(id: number): Promise<void> {
   }
 }
 
+function statusVariant(status: string): 'neutral' | 'success' | 'warning' {
+  if (status === 'active') return 'success'
+  if (status === 'upcoming') return 'warning'
+  return 'neutral'
+}
+
 onMounted(loadSeasons)
 </script>
 
 <template>
-  <main class="page">
-    <h1>Admin Seasons</h1>
-    <form class="create-form" @submit.prevent="handleCreate">
-      <input v-model="name" placeholder="Season name" />
-      <button type="submit" :disabled="loading">Create</button>
-    </form>
-    <p v-if="error" class="error">{{ error }}</p>
+  <main class="px-4 py-6 sm:px-6">
+    <div class="mx-auto max-w-6xl space-y-4">
+      <UiCard>
+        <h1 class="text-2xl font-semibold text-slate-900">Admin Seasons</h1>
+        <form class="mt-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="handleCreate">
+          <UiInput v-model="name" placeholder="Season name" />
+          <UiButton type="submit" :disabled="loading">Create</UiButton>
+        </form>
+        <p v-if="error" class="mt-3 text-sm text-red-700">{{ error }}</p>
+      </UiCard>
 
-    <section class="list">
-      <article v-for="season in seasons" :key="season.id" class="card">
-        <h2>{{ season.name }} <small>({{ season.status }})</small></h2>
-        <p>{{ season.description || 'No description yet' }}</p>
-        <div class="row">
-          <button type="button" @click="toggleActive(season)">{{ season.is_active ? 'Deactivate' : 'Activate' }}</button>
-          <RouterLink :to="`/admin/seasons/${season.id}`">Edit Maps</RouterLink>
-          <button type="button" @click="handleDelete(season.id)">Delete</button>
-        </div>
-      </article>
-    </section>
+      <div class="grid gap-3">
+        <UiCard v-for="season in seasons" :key="season.id">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg font-semibold text-slate-900">{{ season.name }}</h2>
+            <UiBadge :variant="statusVariant(season.status)">{{ season.status }}</UiBadge>
+          </div>
+          <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <UiButton variant="secondary" size="sm" @click="toggleActive(season)">{{ season.is_active ? 'Deactivate' : 'Activate' }}</UiButton>
+            <RouterLink :to="`/admin/seasons/${season.id}`" custom v-slot="{ navigate }">
+              <UiButton variant="secondary" size="sm" @click="navigate">Edit Maps</UiButton>
+            </RouterLink>
+            <UiButton variant="danger" size="sm" @click="handleDelete(season.id)">Delete</UiButton>
+          </div>
+        </UiCard>
+      </div>
+    </div>
   </main>
 </template>
-
-<style scoped>
-.page { padding: 1.5rem; }
-.create-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.list { display: grid; gap: 1rem; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; }
-.row { display: flex; gap: 0.75rem; align-items: center; }
-.error { color: #b00020; }
-</style>

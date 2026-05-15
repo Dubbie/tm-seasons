@@ -1,37 +1,14 @@
 <script setup lang="ts"></script>
 
 <template>
-  <main class="admin-layout">
-    <section class="card">
-      <h1>Admin Area</h1>
-      <p>Use the sections below to manage maps and seasons.</p>
-      <nav class="links">
-        <RouterLink to="/admin/maps">Manage Maps</RouterLink>
-        <RouterLink to="/admin/seasons">Manage Seasons</RouterLink>
+  <main class="px-4 py-6 sm:px-6">
+    <section class="mx-auto max-w-6xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h1 class="text-2xl font-semibold text-slate-900">Admin Area</h1>
+      <p class="mt-2 text-sm text-slate-600">Use the sections below to manage maps and seasons.</p>
+      <nav class="mt-4 flex gap-3">
+        <RouterLink to="/admin/maps" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Manage Maps</RouterLink>
+        <RouterLink to="/admin/seasons" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Manage Seasons</RouterLink>
       </nav>
     </section>
   </main>
 </template>
-
-<style scoped>
-.admin-layout {
-  min-height: 100vh;
-  padding: 2rem;
-  background: #f3f8fd;
-}
-
-.card {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 1.5rem;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #d8e5f2;
-}
-
-.links {
-  margin-top: 1rem;
-  display: flex;
-  gap: 1rem;
-}
-</style>

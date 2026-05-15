@@ -2,6 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import {
   adminMaps,
   adminSeason,
@@ -66,41 +70,51 @@ onMounted(loadData)
 </script>
 
 <template>
-  <main class="page">
-    <h1>Season Edit</h1>
-    <p v-if="season"><strong>{{ season.name }}</strong> ({{ season.slug }})</p>
+  <main class="px-4 py-6 sm:px-6">
+    <div class="mx-auto max-w-6xl space-y-4">
+      <UiCard>
+        <h1 class="text-2xl font-semibold text-slate-900">Season Edit</h1>
+        <p v-if="season" class="mt-1 text-sm text-slate-600">
+          <strong>{{ season.name }}</strong> ({{ season.slug }})
+        </p>
 
-    <div class="attach-row">
-      <select v-model.number="selectedMapId">
-        <option :value="null">Select imported map</option>
-        <option v-for="map in availableMaps" :key="map.id" :value="map.id">{{ map.name || map.uid }}</option>
-      </select>
-      <button type="button" @click="handleAttach">Attach Map</button>
-    </div>
-
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="loading">Loading...</p>
-
-    <section v-if="season?.maps?.length" class="list">
-      <article v-for="map in season.maps" :key="map.id" class="card">
-        <h2>{{ map.name || map.uid }}</h2>
-        <p>Order: {{ map.season_pivot?.order_index ?? 0 }} | Active: {{ map.season_pivot?.is_active ? 'yes' : 'no' }}</p>
-        <div class="row">
-          <button type="button" @click="move(map, -1)">Move Up</button>
-          <button type="button" @click="move(map, 1)">Move Down</button>
-          <button type="button" @click="toggleMapActive(map)">Toggle Active</button>
-          <button type="button" @click="detach(map)">Remove</button>
+        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <UiSelect
+            id="season-map-select"
+            v-model="selectedMapId"
+            label="Attach imported map"
+            class="max-w-xl"
+          >
+            <option :value="''">Select imported map</option>
+            <option v-for="map in availableMaps" :key="map.id" :value="String(map.id)">{{ map.name || map.uid }}</option>
+          </UiSelect>
+          <UiButton variant="secondary" @click="handleAttach">Attach Map</UiButton>
         </div>
-      </article>
-    </section>
+
+        <p v-if="error" class="mt-3 text-sm text-red-700">{{ error }}</p>
+        <p v-if="loading" class="mt-3 text-sm text-slate-500">Loading...</p>
+      </UiCard>
+
+      <div v-if="season?.maps?.length" class="grid gap-3">
+        <UiCard v-for="map in season.maps" :key="map.id">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">{{ map.name || map.uid }}</h2>
+              <p class="mt-1 text-sm text-slate-600">Order: {{ map.season_pivot?.order_index ?? 0 }}</p>
+            </div>
+            <UiBadge :variant="map.season_pivot?.is_active ? 'success' : 'neutral'">
+              {{ map.season_pivot?.is_active ? 'active' : 'inactive' }}
+            </UiBadge>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <UiButton variant="secondary" size="sm" @click="move(map, -1)">Move Up</UiButton>
+            <UiButton variant="secondary" size="sm" @click="move(map, 1)">Move Down</UiButton>
+            <UiButton variant="secondary" size="sm" @click="toggleMapActive(map)">Toggle Active</UiButton>
+            <UiButton variant="danger" size="sm" @click="detach(map)">Remove</UiButton>
+          </div>
+        </UiCard>
+      </div>
+    </div>
   </main>
 </template>
-
-<style scoped>
-.page { padding: 1.5rem; }
-.attach-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.list { display: grid; gap: 0.75rem; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; }
-.row { display: flex; gap: 0.5rem; }
-.error { color: #b00020; }
-</style>
