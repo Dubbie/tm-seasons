@@ -139,7 +139,7 @@ onUnmounted(() => {
               <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
               <p v-if="countdownLabel" class="mt-1 text-sm text-slate-500">{{ countdownLabel }}</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
               <UiButton
                 v-if="auth.isAdmin.value"
                 size="sm"
@@ -148,19 +148,27 @@ onUnmounted(() => {
               >
                 {{ polling ? 'Polling...' : 'Trigger Poll' }}
               </UiButton>
-              <RouterLink
-                :to="`/seasons/${season.slug}/standings`"
-                class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Standings
-              </RouterLink>
-              <RouterLink
-                :to="`/seasons/${season.slug}/events`"
-                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              >
-                Events
-              </RouterLink>
             </div>
+          </div>
+          <div class="mt-4 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+            <RouterLink
+              :to="`/seasons/${season.slug}`"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors bg-white text-slate-900 shadow-sm"
+            >
+              Overview
+            </RouterLink>
+            <RouterLink
+              :to="`/seasons/${season.slug}/standings`"
+              class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+            >
+              Standings
+            </RouterLink>
+            <RouterLink
+              :to="`/seasons/${season.slug}/events`"
+              class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+            >
+              Events
+            </RouterLink>
           </div>
           <p v-if="pollResult" class="mt-3 text-sm text-green-700">{{ pollResult }}</p>
           <p v-if="pollError" class="mt-3 text-sm text-red-700">{{ pollError }}</p>

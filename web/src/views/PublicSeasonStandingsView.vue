@@ -52,14 +52,26 @@ onMounted(loadData)
               <UiBadge v-if="season.status === 'finalized'" variant="success">Final Standings</UiBadge>
             </div>
           </div>
-          <div v-if="season" class="flex gap-2">
-            <RouterLink
-              :to="`/seasons/${season.slug}/events`"
-              class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              Event Feed
-            </RouterLink>
-          </div>
+        </div>
+        <div v-if="season" class="mt-4 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <RouterLink
+            :to="`/seasons/${season.slug}`"
+            class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+          >
+            Overview
+          </RouterLink>
+          <RouterLink
+            :to="`/seasons/${season.slug}/standings`"
+            class="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-900 shadow-sm transition-colors"
+          >
+            Standings
+          </RouterLink>
+          <RouterLink
+            :to="`/seasons/${season.slug}/events`"
+            class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+          >
+            Events
+          </RouterLink>
         </div>
       </UiCard>
 

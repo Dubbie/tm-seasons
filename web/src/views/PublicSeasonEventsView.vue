@@ -84,14 +84,26 @@ onMounted(loadData)
             <h1 class="text-2xl font-semibold text-slate-900">Event Feed</h1>
             <p v-if="season" class="mt-1 text-sm text-slate-600">{{ season.name }}</p>
           </div>
-          <div v-if="season" class="flex gap-2">
-            <RouterLink
-              :to="`/seasons/${season.slug}/standings`"
-              class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              Standings
-            </RouterLink>
-          </div>
+        </div>
+        <div v-if="season" class="mt-4 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <RouterLink
+            :to="`/seasons/${season.slug}`"
+            class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+          >
+            Overview
+          </RouterLink>
+          <RouterLink
+            :to="`/seasons/${season.slug}/standings`"
+            class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+          >
+            Standings
+          </RouterLink>
+          <RouterLink
+            :to="`/seasons/${season.slug}/events`"
+            class="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-900 shadow-sm transition-colors"
+          >
+            Events
+          </RouterLink>
         </div>
       </UiCard>
 
