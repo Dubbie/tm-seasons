@@ -1,4 +1,4 @@
-# tm-bot
+# TM Seasons
 
 Trackmania club seasons platform with:
 
