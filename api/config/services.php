@@ -27,4 +27,12 @@ return [
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI'),
     ],
+
+    'trackmania_io' => [
+        'base_url' => env('TRACKMANIA_IO_BASE_URL', 'https://trackmania.io'),
+        'user_agent' => env('TRACKMANIA_IO_USER_AGENT', env('TRACKMANIA_USER_AGENT', 'tm-bot-club-sync/1.0 (contact: admin@example.com)')),
+        'timeout_seconds' => (int) env('TRACKMANIA_IO_TIMEOUT_SECONDS', 10),
+        'retry_times' => (int) env('TRACKMANIA_IO_RETRY_TIMES', 2),
+        'retry_sleep_ms' => (int) env('TRACKMANIA_IO_RETRY_SLEEP_MS', 200),
+    ],
 ];

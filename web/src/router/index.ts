@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuth } from '@/composables/useAuth'
 import AdminMapsView from '@/views/AdminMapsView.vue'
+import AdminClubDetailView from '@/views/AdminClubDetailView.vue'
+import AdminClubsView from '@/views/AdminClubsView.vue'
 import AdminSeasonEditView from '@/views/AdminSeasonEditView.vue'
 import AdminSeasonsView from '@/views/AdminSeasonsView.vue'
 import AdminView from '@/views/AdminView.vue'
@@ -9,6 +11,7 @@ import AuthCallbackView from '@/views/AuthCallbackView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
 import PublicSeasonDetailView from '@/views/PublicSeasonDetailView.vue'
+import PublicClubDetailView from '@/views/PublicClubDetailView.vue'
 import PublicSeasonsView from '@/views/PublicSeasonsView.vue'
 
 const router = createRouter({
@@ -50,6 +53,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/admin/clubs',
+      component: AdminClubsView,
+      meta: {
+        requiresAuth: true,
+        requiresAdmin: true,
+      },
+    },
+    {
+      path: '/admin/clubs/members',
+      component: AdminClubDetailView,
+      meta: {
+        requiresAuth: true,
+        requiresAdmin: true,
+      },
+    },
+    {
       path: '/admin/seasons',
       component: AdminSeasonsView,
       meta: {
@@ -72,6 +91,10 @@ const router = createRouter({
     {
       path: '/seasons/:slug',
       component: PublicSeasonDetailView,
+    },
+    {
+      path: '/clubs/:id',
+      component: PublicClubDetailView,
     },
   ],
 })

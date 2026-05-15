@@ -133,4 +133,33 @@ class TrackmaniaClientTest extends TestCase
 
         $this->assertSame(-1, $leaderboard->entries[0]->score);
     }
+
+    public function test_get_club_and_members_are_normalized(): void
+    {
+        Http::fake([
+            'prod.trackmania.core.nadeo.online/*' => Http::response(['accessToken' => 'token-123'], 200),
+            'live-services.trackmania.nadeo.live/api/token/club/12345' => Http::response([
+                'id' => 12345,
+                'name' => 'Test Club',
+                'tag' => 'TC',
+                'description' => 'Desc',
+                'memberCount' => 2,
+                'iconUrl' => 'https://example.com/icon.png',
+            ], 200),
+            'live-services.trackmania.nadeo.live/api/token/club/12345/member' => Http::response([
+                'clubMemberList' => [
+                    ['accountId' => 'player-1', 'displayName' => 'Player One', 'zone' => ['zoneId' => 'world', 'name' => 'World']],
+                ],
+            ], 200),
+        ]);
+
+        $client = app(TrackmaniaClient::class);
+        $club = $client->getClub('12345');
+        $members = $client->getClubMembers('12345');
+
+        $this->assertSame('12345', $club['club_id']);
+        $this->assertSame('Test Club', $club['name']);
+        $this->assertCount(1, $members);
+        $this->assertSame('player-1', $members[0]['account_id']);
+    }
 }

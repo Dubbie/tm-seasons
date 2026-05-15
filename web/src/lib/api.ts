@@ -53,6 +53,50 @@ export type ApiSeason = {
   updated_at: string | null
 }
 
+export type ApiTrackmaniaClub = {
+  id: number
+  club_id: string
+  name: string
+  tag: string | null
+  description: string | null
+  member_count: number | null
+  icon_url: string | null
+  is_primary: boolean
+  last_synced_at: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export type ApiTrackmaniaPlayer = {
+  id: number
+  account_id: string
+  display_name: string
+  zone_id: string | null
+  zone_name: string | null
+  is_active: boolean
+  last_seen_in_club_at: string | null
+}
+
+export type ApiClubMember = {
+  id: number
+  trackmania_club_id: number
+  trackmania_player_id: number
+  joined_at: string | null
+  synced_at: string | null
+  is_active: boolean
+  player: ApiTrackmaniaPlayer
+}
+
+export type ApiPaginatedCollection<T> = {
+  data: T[]
+  meta?: {
+    current_page: number
+    last_page: number
+    per_page: number
+    total: number
+  }
+}
+
 type ApiCollection<T> = {
   data: T[]
 }
@@ -193,6 +237,104 @@ export async function publicSeason(slug: string): Promise<ApiSeason> {
 
 export async function publicMap(uid: string): Promise<ApiMap> {
   const payload = await request<ApiResource<ApiMap>>(`/api/maps/${uid}`, {}, false)
+  return payload.data
+}
+
+export async function adminClubs(): Promise<ApiTrackmaniaClub[]> {
+  const payload = await request<ApiPaginatedCollection<ApiTrackmaniaClub>>('/api/admin/clubs')
+  return payload.data
+}
+
+export async function adminClub(id: number): Promise<ApiTrackmaniaClub> {
+  const payload = await request<ApiResource<ApiTrackmaniaClub>>(`/api/admin/clubs/${id}`)
+  return payload.data
+}
+
+export async function adminPrimaryClub(): Promise<ApiTrackmaniaClub> {
+  const payload = await request<ApiResource<ApiTrackmaniaClub>>('/api/admin/club')
+  return payload.data
+}
+
+export async function syncAdminClub(clubId: string): Promise<{
+  club: ApiTrackmaniaClub
+  imported: number
+  updated: number
+  deactivated: number
+  total_members: number
+}> {
+  return request('/api/admin/clubs/sync', {
+    method: 'POST',
+    body: JSON.stringify({ club_id: clubId }),
+  })
+}
+
+export async function syncAdminPrimaryClub(clubId: string): Promise<{
+  club: ApiTrackmaniaClub
+  imported: number
+  updated: number
+  deactivated: number
+  enriched: number
+  total_members: number
+}> {
+  return request('/api/admin/club/sync', {
+    method: 'POST',
+    body: JSON.stringify({ club_id: clubId }),
+  })
+}
+
+export async function adminClubMembers(
+  clubId: number,
+  params: {
+    search?: string
+    active?: '1' | '0' | ''
+    sort?: 'display_name' | 'last_seen'
+    direction?: 'asc' | 'desc'
+    page?: number
+  } = {},
+): Promise<ApiPaginatedCollection<ApiClubMember>> {
+  const query = new URLSearchParams()
+  if (params.search) query.set('search', params.search)
+  if (params.active !== undefined && params.active !== '') query.set('active', params.active)
+  if (params.sort) query.set('sort', params.sort)
+  if (params.direction) query.set('direction', params.direction)
+  if (params.page) query.set('page', String(params.page))
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return request<ApiPaginatedCollection<ApiClubMember>>(`/api/admin/clubs/${clubId}/members${suffix}`)
+}
+
+export async function adminPrimaryClubMembers(
+  params: {
+    search?: string
+    active?: '1' | '0' | ''
+    sort?: 'display_name' | 'last_seen'
+    direction?: 'asc' | 'desc'
+    page?: number
+  } = {},
+): Promise<ApiPaginatedCollection<ApiClubMember>> {
+  const query = new URLSearchParams()
+  if (params.search) query.set('search', params.search)
+  if (params.active !== undefined && params.active !== '') query.set('active', params.active)
+  if (params.sort) query.set('sort', params.sort)
+  if (params.direction) query.set('direction', params.direction)
+  if (params.page) query.set('page', String(params.page))
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return request<ApiPaginatedCollection<ApiClubMember>>(`/api/admin/club/members${suffix}`)
+}
+
+export async function publicClubs(): Promise<ApiTrackmaniaClub[]> {
+  const payload = await request<ApiPaginatedCollection<ApiTrackmaniaClub>>('/api/clubs', {}, false)
+  return payload.data
+}
+
+export async function publicClub(id: number): Promise<ApiTrackmaniaClub> {
+  const payload = await request<ApiResource<ApiTrackmaniaClub>>(`/api/clubs/${id}`, {}, false)
+  return payload.data
+}
+
+export async function publicClubMembers(clubId: number, active: '1' | '0' = '1'): Promise<ApiClubMember[]> {
+  const payload = await request<ApiPaginatedCollection<ApiClubMember>>(`/api/clubs/${clubId}/members?active=${active}`, {}, false)
   return payload.data
 }
 

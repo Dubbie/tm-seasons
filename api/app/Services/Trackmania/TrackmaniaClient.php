@@ -5,6 +5,7 @@ namespace App\Services\Trackmania;
 use App\DTOs\Trackmania\TrackmaniaLeaderboard;
 use App\DTOs\Trackmania\TrackmaniaMap;
 use App\Exceptions\Trackmania\TrackmaniaClientException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
@@ -53,6 +54,96 @@ class TrackmaniaClient
         return TrackmaniaLeaderboard::fromApiResponse($mapUid, $groupUid, $payload);
     }
 
+    public function getClub(int|string $clubId): array
+    {
+        $response = $this->request()
+            ->get(sprintf('/api/token/club/%s', urlencode((string) $clubId)));
+
+        $this->ensureSuccessful($response, 'club', (string) $clubId);
+        $payload = $this->arrayPayload($response);
+
+        return [
+            'club_id' => (string) ($payload['id'] ?? $payload['clubId'] ?? $clubId),
+            'name' => (string) ($payload['name'] ?? ''),
+            'tag' => $this->nullableString($payload['tag'] ?? null),
+            'description' => $this->nullableString($payload['description'] ?? null),
+            'member_count' => isset($payload['memberCount']) ? (int) $payload['memberCount'] : null,
+            'icon_url' => $this->nullableString($payload['iconUrl'] ?? null),
+        ];
+    }
+
+    public function getClubMembers(int|string $clubId): array
+    {
+        $clubId = (string) $clubId;
+        $length = 100;
+        $offset = 0;
+        $allMembers = [];
+
+        while (true) {
+            $attempts = [
+                ['/api/token/club/%s/member', ['length' => $length, 'offset' => $offset]],
+                ['/api/token/club/%s/member', []],
+                ['/api/token/club/%s/members', ['length' => $length, 'offset' => $offset]],
+                ['/api/token/club/%s/members', []],
+            ];
+
+            $response = null;
+
+            foreach ($attempts as [$pathTemplate, $query]) {
+                $candidate = $this->request()->get(sprintf($pathTemplate, urlencode($clubId)), $query);
+
+                if ($candidate->successful()) {
+                    $response = $candidate;
+
+                    break;
+                }
+
+                $response = $candidate;
+            }
+
+            if (! $response instanceof Response) {
+                throw new TrackmaniaClientException('Trackmania club members request failed before any response was received.');
+            }
+
+            $this->ensureSuccessful($response, 'club members', $clubId);
+
+            $payload = $this->arrayPayload($response);
+            $members = $payload['clubMemberList'] ?? $payload['members'] ?? [];
+
+            if (! is_array($members) || $members === []) {
+                break;
+            }
+
+            $allMembers = [...$allMembers, ...$members];
+
+            if (count($members) < $length) {
+                break;
+            }
+
+            $offset += $length;
+        }
+
+        return array_values(array_filter(array_map(function ($member): ?array {
+            if (! is_array($member)) {
+                return null;
+            }
+
+            $accountId = $this->nullableString($member['accountId'] ?? null);
+            $displayName = $this->nullableString($member['displayName'] ?? $member['name'] ?? null) ?? $accountId;
+            if (! $accountId) {
+                return null;
+            }
+
+            return [
+                'account_id' => $accountId,
+                'display_name' => $displayName,
+                'zone_id' => $this->nullableString(data_get($member, 'zone.zoneId')),
+                'zone_name' => $this->nullableString(data_get($member, 'zone.name')),
+                'joined_at' => $this->toIsoDateTime($member['joinDate'] ?? null),
+            ];
+        }, $allMembers)));
+    }
+
     private function request(): PendingRequest
     {
         $baseUrl = rtrim((string) config('trackmania.base_url', self::BASE_URL_DEFAULT), '/');
@@ -72,18 +163,50 @@ class TrackmaniaClient
             ]);
     }
 
-    private function ensureSuccessful(Response $response, string $resource, string $mapUid): void
+    private function ensureSuccessful(Response $response, string $resource, string $identifier): void
     {
         if ($resource === 'map' && $response->status() === 404) {
-            throw new TrackmaniaClientException(sprintf('Trackmania map not found for uid [%s].', $mapUid));
+            throw new TrackmaniaClientException(sprintf('Trackmania map not found for uid [%s].', $identifier));
         }
 
         if (! $response->successful()) {
+            $body = trim((string) $response->body());
+            $detail = $body !== '' ? sprintf(' Response: %s', mb_substr($body, 0, 300)) : '';
+
             throw new TrackmaniaClientException(sprintf(
-                'Trackmania %s request failed with status [%d].',
+                'Trackmania %s request failed with status [%d].%s',
                 $resource,
                 $response->status(),
+                $detail,
             ));
+        }
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function toIsoDateTime(mixed $value): ?string
+    {
+        if (is_numeric($value)) {
+            return CarbonImmutable::createFromTimestamp((int) $value)->toIso8601String();
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
         }
     }
 

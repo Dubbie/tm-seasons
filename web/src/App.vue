@@ -32,6 +32,7 @@ async function handleLogout(): Promise<void> {
             <RouterLink v-if="auth.isAuthenticated.value" to="/dashboard" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Dashboard</RouterLink>
             <RouterLink v-if="auth.isAdmin.value" to="/admin/seasons" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Admin Seasons</RouterLink>
             <RouterLink v-if="auth.isAdmin.value" to="/admin/maps" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Admin Maps</RouterLink>
+            <RouterLink v-if="auth.isAdmin.value" to="/admin/clubs" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Admin Clubs</RouterLink>
           </nav>
         </div>
 

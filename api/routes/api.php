@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminMapController;
+use App\Http\Controllers\Admin\AdminClubController;
+use App\Http\Controllers\Admin\AdminClubMemberController;
 use App\Http\Controllers\Admin\AdminSeasonController;
 use App\Http\Controllers\Admin\AdminSeasonMapController;
 use App\Http\Controllers\Auth\DiscordAuthController;
+use App\Http\Controllers\Public\PublicClubController;
 use App\Http\Controllers\Public\PublicMapController;
 use App\Http\Controllers\Public\PublicSeasonController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +16,9 @@ Route::get('/me', [DiscordAuthController::class, 'me'])->middleware('auth:sanctu
 Route::get('/seasons', [PublicSeasonController::class, 'index']);
 Route::get('/seasons/{slug}', [PublicSeasonController::class, 'show']);
 Route::get('/maps/{uid}', [PublicMapController::class, 'show']);
+Route::get('/clubs', [PublicClubController::class, 'index']);
+Route::get('/clubs/{club}', [PublicClubController::class, 'show']);
+Route::get('/clubs/{club}/members', [PublicClubController::class, 'members']);
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function (): void {
     Route::get('/maps', [AdminMapController::class, 'index']);
@@ -30,4 +36,13 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/seasons/{season}/maps', [AdminSeasonMapController::class, 'store']);
     Route::patch('/seasons/{season}/maps/{map}', [AdminSeasonMapController::class, 'update']);
     Route::delete('/seasons/{season}/maps/{map}', [AdminSeasonMapController::class, 'destroy']);
+
+    Route::get('/clubs', [AdminClubController::class, 'index']);
+    Route::get('/clubs/{club}', [AdminClubController::class, 'show']);
+    Route::post('/clubs/sync', [AdminClubController::class, 'sync']);
+    Route::get('/clubs/{club}/members', [AdminClubMemberController::class, 'index']);
+
+    Route::get('/club', [AdminClubController::class, 'primary']);
+    Route::post('/club/sync', [AdminClubController::class, 'syncPrimary']);
+    Route::get('/club/members', [AdminClubMemberController::class, 'primary']);
 });
