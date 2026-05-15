@@ -5,33 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SeasonMapPlayerRecord extends Model
+class PointEvent extends Model
 {
     protected $fillable = [
         'season_id',
         'map_id',
         'trackmania_player_id',
-        'global_position',
-        'current_position',
-        'time_ms',
-        'baseline_time_ms',
-        'first_seen_at',
-        'last_seen_at',
-        'last_improved_at',
-        'total_improvements',
+        'type',
+        'points',
+        'description',
+        'metadata',
     ];
 
     protected function casts(): array
     {
         return [
-            'global_position' => 'integer',
-            'current_position' => 'integer',
-            'time_ms' => 'integer',
-            'baseline_time_ms' => 'integer',
-            'first_seen_at' => 'datetime',
-            'last_seen_at' => 'datetime',
-            'last_improved_at' => 'datetime',
-            'total_improvements' => 'integer',
+            'season_id' => 'integer',
+            'map_id' => 'integer',
+            'trackmania_player_id' => 'integer',
+            'points' => 'integer',
+            'metadata' => 'array',
         ];
     }
 

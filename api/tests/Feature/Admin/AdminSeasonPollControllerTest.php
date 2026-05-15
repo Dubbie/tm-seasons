@@ -42,7 +42,7 @@ class AdminSeasonPollControllerTest extends TestCase
                 'total_maps',
                 'maps_processed',
                 'snapshots_created',
-                'improvements_detected',
+                'records_updated',
             ]);
     }
 

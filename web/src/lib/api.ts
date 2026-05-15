@@ -346,10 +346,59 @@ export type ApiSeasonMapPlayerRecord = {
   trackmania_player_id: number
   player?: ApiTrackmaniaPlayer
   global_position: number | null
+  current_position: number | null
   time_ms: number | null
+  baseline_time_ms: number | null
   first_seen_at: string | null
   last_seen_at: string | null
   last_improved_at: string | null
+  total_improvements: number
+}
+
+export type ApiPointEvent = {
+  id: number
+  season_id: number
+  map_id: number | null
+  map?: ApiMap | null
+  trackmania_player_id: number
+  player?: ApiTrackmaniaPlayer
+  type: string
+  points: number
+  description: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string | null
+}
+
+export type ApiStandingEntry = {
+  position: number
+  player_id: number
+  player: ApiTrackmaniaPlayer | null
+  total_points: number
+  maps_completed: number
+  event_count: number
+  events_by_type: Record<string, number>
+}
+
+export type ApiPlayerSeasonDetail = {
+  player_id: number
+  player: ApiTrackmaniaPlayer | null
+  total_points: number
+  position: number | null
+  maps_completed: number
+  event_count: number
+  events_by_type: Record<string, number>
+  events: ApiPointEvent[]
+  milestones: ApiPlayerMapMilestone[]
+}
+
+export type ApiPlayerMapMilestone = {
+  id: number
+  season_id: number
+  map_id: number
+  map?: ApiMap | null
+  trackmania_player_id: number
+  milestone_key: string
+  achieved_at: string
 }
 
 export type ApiLeaderboardPoll = {
@@ -367,8 +416,10 @@ export type ApiLeaderboardPoll = {
 
 export type ApiSeasonLeaderboardEntry = {
   id: number
+  trackmania_player_id: number
   player: ApiTrackmaniaPlayer | null
   global_position: number | null
+  current_position: number | null
   time_ms: number | null
 }
 
@@ -377,7 +428,7 @@ export type ApiPollResult = {
   total_maps: number
   maps_processed: number
   snapshots_created: number
-  improvements_detected: number
+  records_updated: number
 }
 
 export async function pollSeason(seasonId: number): Promise<ApiPollResult> {
@@ -416,6 +467,60 @@ export async function publicSeasonLeaderboard(slug: string): Promise<{
 }> {
   const payload = await request<ApiResource<{ season: ApiSeason; leaderboard: { map: { id: number; name: string | null; uid: string }; entries: ApiSeasonLeaderboardEntry[] }[] }>>(`/api/seasons/${slug}/leaderboard`, {}, false)
   return payload.data
+}
+
+export async function publicSeasonStandings(slug: string): Promise<{
+  season_id: number
+  season_name: string
+  standings: ApiStandingEntry[]
+}> {
+  const payload = await request<ApiResource<{ season_id: number; season_name: string; standings: ApiStandingEntry[] }>>(`/api/seasons/${slug}/standings`, {}, false)
+  return payload.data
+}
+
+export async function publicSeasonEvents(
+  slug: string,
+  params: { player_id?: number; page?: number } = {},
+): Promise<ApiPaginatedCollection<ApiPointEvent>> {
+  const query = new URLSearchParams()
+  if (params.player_id) query.set('player_id', String(params.player_id))
+  if (params.page) query.set('page', String(params.page))
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return request<ApiPaginatedCollection<ApiPointEvent>>(`/api/seasons/${slug}/events${suffix}`, {}, false)
+}
+
+export async function publicSeasonPlayer(slug: string, playerId: number): Promise<ApiPlayerSeasonDetail> {
+  const payload = await request<ApiResource<ApiPlayerSeasonDetail>>(`/api/seasons/${slug}/players/${playerId}`, {}, false)
+  return payload.data
+}
+
+export async function adminSeasonPoints(seasonId: number): Promise<{
+  season_id: number
+  standings: ApiStandingEntry[]
+  total_events: number
+}> {
+  const payload = await request<ApiResource<{ season_id: number; standings: ApiStandingEntry[]; total_events: number }>>(`/api/admin/seasons/${seasonId}/points`)
+  return payload.data
+}
+
+export async function adminSeasonEvents(
+  seasonId: number,
+  params: { player_id?: number; map_id?: number; type?: string; page?: number; per_page?: number } = {},
+): Promise<ApiPaginatedCollection<ApiPointEvent>> {
+  const query = new URLSearchParams()
+  if (params.player_id) query.set('player_id', String(params.player_id))
+  if (params.map_id) query.set('map_id', String(params.map_id))
+  if (params.type) query.set('type', params.type)
+  if (params.page) query.set('page', String(params.page))
+  if (params.per_page) query.set('per_page', String(params.per_page))
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return request<ApiPaginatedCollection<ApiPointEvent>>(`/api/admin/seasons/${seasonId}/events${suffix}`)
+}
+
+export async function recalculateSeasonPoints(seasonId: number): Promise<{ message: string; events_count: number }> {
+  return request(`/api/admin/seasons/${seasonId}/recalculate`, { method: 'POST' })
 }
 
 async function request<T>(

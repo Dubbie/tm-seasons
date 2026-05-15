@@ -29,7 +29,7 @@ class AdminSeasonPollController extends Controller
             'total_maps' => $result['total_maps'],
             'maps_processed' => $result['maps_processed'],
             'snapshots_created' => $result['snapshots_created'],
-            'improvements_detected' => $result['improvements_detected'],
+            'records_updated' => $result['records_updated'],
         ]);
     }
 
@@ -50,7 +50,7 @@ class AdminSeasonPollController extends Controller
         $sort = $request->string('sort', 'time_ms')->toString();
         $direction = $request->string('direction', 'asc')->toString();
 
-        if (in_array($sort, ['global_position', 'time_ms', 'last_improved_at'], true)) {
+        if (in_array($sort, ['global_position', 'current_position', 'time_ms', 'last_improved_at'], true)) {
             $query->orderBy($sort, $direction === 'desc' ? 'desc' : 'asc');
         }
 

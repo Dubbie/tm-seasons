@@ -10,7 +10,9 @@ use App\Models\Season;
 use App\Models\SeasonMapPlayerRecord;
 use App\Models\TrackmaniaClub;
 use App\Models\TrackmaniaPlayer;
+use App\Services\Scoring\SeasonScoringService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SeasonLeaderboardPollingService
@@ -21,6 +23,7 @@ class SeasonLeaderboardPollingService
 
     public function __construct(
         private readonly TrackmaniaClient $trackmaniaClient,
+        private readonly SeasonScoringService $scoringService,
     ) {}
 
     public function pollSeason(Season $season): array
@@ -67,7 +70,7 @@ class SeasonLeaderboardPollingService
             return [
                 'maps_processed' => 0,
                 'snapshots_created' => 0,
-                'improvements_detected' => 0,
+                'records_updated' => 0,
                 'map_errors' => [],
                 'total_maps' => $maps->count(),
             ];
@@ -75,30 +78,37 @@ class SeasonLeaderboardPollingService
 
         $mapsProcessed = 0;
         $snapshotsCreated = 0;
-        $improvementsDetected = 0;
+        $recordsUpdated = 0;
         $mapErrors = [];
 
         foreach ($maps as $map) {
             try {
                 $entries = $this->fetchMapLeaderboardForClub($map->uid, $activePlayers);
 
-                foreach ($entries as $entry) {
-                    $player = $activePlayers[$entry['account_id']];
+                $clubRankedEntries = $this->computeClubPositions($entries);
+
+                foreach ($clubRankedEntries as $rankedEntry) {
+                    $player = $activePlayers[$rankedEntry['account_id']];
 
                     LeaderboardSnapshot::query()->create([
                         'leaderboard_poll_id' => $poll->id,
                         'season_id' => $season->id,
                         'map_id' => $map->id,
                         'trackmania_player_id' => $player->id,
-                        'position' => $entry['position'],
-                        'time_ms' => $entry['score'],
-                        'zone_name' => $entry['zone_name'],
+                        'global_position' => $rankedEntry['position'],
+                        'current_position' => $rankedEntry['club_position'],
+                        'time_ms' => $rankedEntry['score'],
+                        'zone_name' => $rankedEntry['zone_name'],
                         'recorded_at' => now(),
                     ]);
 
                     $snapshotsCreated++;
 
-                    $this->updatePlayerRecord($season, $map, $player, $entry, $improvementsDetected);
+                    $updated = $this->updatePlayerRecord($season, $map, $player, $rankedEntry);
+
+                    if ($updated) {
+                        $recordsUpdated++;
+                    }
                 }
 
                 $mapsProcessed++;
@@ -123,7 +133,7 @@ class SeasonLeaderboardPollingService
         return [
             'maps_processed' => $mapsProcessed,
             'snapshots_created' => $snapshotsCreated,
-            'improvements_detected' => $improvementsDetected,
+            'records_updated' => $recordsUpdated,
             'map_errors' => $mapErrors,
             'total_maps' => $maps->count(),
         ];
@@ -192,55 +202,96 @@ class SeasonLeaderboardPollingService
         return $matchedEntries;
     }
 
+    private function computeClubPositions(array $entries): array
+    {
+        $sorted = collect($entries)->sortBy('score')->values();
+
+        return $sorted->map(function (array $entry, int $index): array {
+            $entry['club_position'] = $index + 1;
+
+            return $entry;
+        })->toArray();
+    }
+
     private function updatePlayerRecord(
         Season $season,
         Map $map,
         TrackmaniaPlayer $player,
         array $entry,
-        int &$improvementsDetected,
-    ): void {
-        $record = SeasonMapPlayerRecord::query()->firstOrNew([
-            'season_id' => $season->id,
-            'map_id' => $map->id,
-            'trackmania_player_id' => $player->id,
-        ]);
-
-        $now = now();
-
-        if (! $record->exists) {
-            $record->fill([
-                'global_position' => $entry['position'],
-                'time_ms' => $entry['score'],
-                'first_seen_at' => $now,
-                'last_seen_at' => $now,
-                'last_improved_at' => $now,
-                'total_improvements' => 0,
-            ]);
-            $record->save();
-
-            return;
-        }
-
-        $record->global_position = $entry['position'];
-        $record->last_seen_at = $now;
-
-        if ($entry['score'] > 0 && $entry['score'] < ($record->time_ms ?? PHP_INT_MAX)) {
-            $record->time_ms = $entry['score'];
-            $record->last_improved_at = $now;
-            $record->total_improvements++;
-            $improvementsDetected++;
-        }
-
-        if ($entry['score'] > ($record->time_ms ?? 0)) {
-            Log::warning('Worse time detected in leaderboard poll', [
+    ): bool {
+        return DB::transaction(function () use ($season, $map, $player, $entry): bool {
+            $record = SeasonMapPlayerRecord::query()->firstOrNew([
                 'season_id' => $season->id,
                 'map_id' => $map->id,
-                'player_id' => $player->id,
-                'existing_time_ms' => $record->time_ms,
-                'incoming_time_ms' => $entry['score'],
+                'trackmania_player_id' => $player->id,
             ]);
-        }
 
-        $record->save();
+            $now = now();
+
+            if (! $record->exists) {
+                $record->fill([
+                    'global_position' => $entry['position'],
+                    'current_position' => $entry['club_position'],
+                    'time_ms' => $entry['score'],
+                    'baseline_time_ms' => $entry['score'],
+                    'first_seen_at' => $now,
+                    'last_seen_at' => $now,
+                    'last_improved_at' => $now,
+                    'total_improvements' => 0,
+                ]);
+                $record->save();
+
+                $this->scoringService->evaluateNewRecord(
+                    season: $season,
+                    map: $map,
+                    player: $player,
+                    timeMs: $entry['score'],
+                    currentPosition: $entry['club_position'],
+                    isNew: true,
+                );
+
+                return true;
+            }
+
+            $timeChanged = $entry['score'] > 0 && $entry['score'] < ($record->time_ms ?? PHP_INT_MAX);
+            $positionChanged = $entry['club_position'] !== $record->current_position;
+
+            $record->global_position = $entry['position'];
+            $record->current_position = $entry['club_position'];
+            $record->last_seen_at = $now;
+
+            if ($timeChanged) {
+                $record->time_ms = $entry['score'];
+                $record->last_improved_at = $now;
+                $record->total_improvements++;
+            }
+
+            if ($entry['score'] > ($record->time_ms ?? 0)) {
+                Log::warning('Worse time detected in leaderboard poll', [
+                    'season_id' => $season->id,
+                    'map_id' => $map->id,
+                    'player_id' => $player->id,
+                    'existing_time_ms' => $record->time_ms,
+                    'incoming_time_ms' => $entry['score'],
+                ]);
+            }
+
+            $record->save();
+
+            if (! $timeChanged && ! $positionChanged) {
+                return false;
+            }
+
+            $this->scoringService->evaluateNewRecord(
+                season: $season,
+                map: $map,
+                player: $player,
+                timeMs: $record->time_ms ?? $entry['score'],
+                currentPosition: $entry['club_position'],
+                isNew: false,
+            );
+
+            return true;
+        });
     }
 }

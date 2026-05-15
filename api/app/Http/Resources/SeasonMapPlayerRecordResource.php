@@ -19,10 +19,13 @@ class SeasonMapPlayerRecordResource extends JsonResource
             'trackmania_player_id' => $this->trackmania_player_id,
             'player' => new TrackmaniaPlayerResource($this->whenLoaded('player')),
             'global_position' => $this->global_position,
+            'current_position' => $this->current_position,
             'time_ms' => $this->time_ms,
+            'baseline_time_ms' => $this->baseline_time_ms,
             'first_seen_at' => $this->first_seen_at?->toIso8601String(),
             'last_seen_at' => $this->last_seen_at?->toIso8601String(),
             'last_improved_at' => $this->last_improved_at?->toIso8601String(),
+            'total_improvements' => $this->total_improvements,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

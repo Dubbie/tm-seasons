@@ -308,7 +308,7 @@ Notes:
 
 ---
 
-### season_map_entries
+### season_map_player_records
 
 Current known state for one player on one map in one season.
 
@@ -317,25 +317,17 @@ Fields:
 - id
 - season_id
 - map_id
-- trackmania_account_id
-- baseline_time_ms nullable
-- current_best_time_ms nullable
-- current_rank nullable
-- previous_best_time_ms nullable
-- previous_rank nullable
-- points_total integer default 0
-- claimed_milestones json
+- trackmania_player_id
+- global_position nullable
+- current_position nullable (club-relative rank, updated on each poll)
+- time_ms nullable (current PB)
+- baseline_time_ms nullable (kept for historical reference; does NOT affect scoring)
 - first_seen_at nullable
+- last_seen_at nullable
 - last_improved_at nullable
-- last_checked_at nullable
+- total_improvements integer default 0
 - created_at
 - updated_at
-
-Important:
-
-- `baseline_time_ms` is the player's reference time for improvement scoring.
-- For players with an existing time at season start, baseline is their season-start PB.
-- For players with no previous time, their first detected finish becomes their baseline and earns finish/first-time points, but should not generate huge improvement points immediately.
 
 ---
 
@@ -359,11 +351,8 @@ Fields:
 Example types:
 
 - first_finish
-- first_season_time
-- improvement_milestone
-- rank_milestone
-- seasonal_wr
-- admin_adjustment
+- medal_bronze, medal_silver, medal_gold, medal_author
+- entered_top_20, entered_top_10, entered_top_5, entered_top_1
 
 Notes:
 
@@ -414,75 +403,47 @@ The scoring system should be participation-first, but still reward competitive a
 
 Do not award points for every tiny PB improvement. Award milestone points only.
 
+Points are awarded based on:
+1. **First finish** — one-time reward for completing a map
+2. **Medal thresholds** — cumulative rewards based on map medal times (bronze/silver/gold/author)
+3. **Club position thresholds** — one-time rewards for reaching top 20/10/5/1 in the club
+
+This design is immune to farming: there is no way to earn extra points by intentionally setting bad times.
+
 ### Recommended MVP Scoring
 
 Per season map:
 
 ```txt
-Finish map: +10
-First seasonal valid time: +5
-Improve over baseline by 0.10s total: +5
-Improve over baseline by 0.25s total: +10
-Improve over baseline by 0.50s total: +15
-Improve over baseline by 1.00s total: +25
-Improve over baseline by 2.00s total: +40
-Enter top 20: +10
-Enter top 10: +20
-Enter top 5: +35
-Take seasonal WR: +50
+First finish (once per player per map):                    +10
+Medal rewards (cumulative — beating gold also awards bronze + silver):
+  Bronze medal:                                             +5
+  Silver medal:                                            +10
+  Gold medal:                                              +20
+  Author medal:                                            +35
+Position rewards (club-relative, once per threshold):
+  Enter Club Top 20:                                       +10
+  Enter Club Top 10:                                       +20
+  Enter Club Top 5:                                        +35
+  Take #1 in Club:                                         +50
 ```
 
-Each milestone can only be claimed once per player per map.
+Each reward can only be claimed once per player per map.
 
-Use `claimed_milestones` on `season_map_entries` to prevent duplicate awards.
+Milestones are stored in a dedicated `player_map_milestones` table with a unique constraint on (season_id, map_id, trackmania_player_id, milestone_key) to prevent duplicates at the database level.
 
-Example `claimed_milestones`:
-
-```json
-{
-  "finish": true,
-  "first_season_time": true,
-  "improvement_100ms": true,
-  "improvement_250ms": true,
-  "top_20": true,
-  "top_10": false,
-  "top_5": false,
-  "seasonal_wr": false
-}
-```
+Position rewards use `current_position` (club-relative ranking), not `global_position`. Medal thresholds use map medal times stored locally on the `maps` table (`bronze_time`, `silver_time`, `gold_time`, `author_time`).
 
 ---
 
-## Anti-Farming Rules
+## Anti-Farming Design
 
-This is critical.
+The medal-based scoring system is naturally immune to farming because:
 
-### Problem
-
-A fast player could intentionally set a bad time, then improve slightly over many runs to farm points.
-
-### Solution
-
-Use season baselines and one-time milestones.
-
-Rules:
-
-1. Improvement points are based on total improvement over `baseline_time_ms`, not the previous poll's time.
-2. Each improvement threshold can only be awarded once.
-3. First detected finish for a new player becomes their baseline.
-4. The first finish does not itself grant improvement milestone points.
-5. Improvement points per map should be capped naturally by the finite milestone list.
-6. Tiny repeated improvements should not produce repeated points.
-
-Example:
-
-```txt
-Baseline: 31.500
-Current: 31.220
-Total improvement: 280ms
-Award 100ms and 250ms milestones once.
-Do not award anything again until they cross 500ms.
-```
+1. **Medal rewards are objective** — based on the map's fixed medal times (bronze, silver, gold, author). There is no way to game them; you either achieved the time or you didn't.
+2. **One-time milestones** — each medal/position reward can only be claimed once per player per map. The `player_map_milestones` table enforces this at the database level with a unique constraint.
+3. **No improvement-from-baseline scoring** — the old system let players farm points by starting with a bad time and improving incrementally. This is eliminated entirely.
+4. **First finish is rewarded once** — no additional points for subsequent finishes on the same map.
 
 ---
 
@@ -504,15 +465,12 @@ Example flow:
 
 ```txt
 For each active season map:
-  fetch latest leaderboard from Trackmania.io/node package
-  store snapshot or useful summary
-  upsert Trackmania accounts found in leaderboard
-  upsert season participants
-  compare fetched records to season_map_entries
-  detect new finish, PB improvement, rank milestone, seasonal WR
-  create point_events for newly unlocked milestones
-  update season_map_entries
-  update denormalized point totals
+  fetch club leaderboard from Trackmania.io
+  store snapshot (immutable history)
+  upsert player records (PB, position)
+  evaluate medal rewards (bronze/silver/gold/author)
+  evaluate position rewards (top 20/10/5/1)
+  create point_events for each newly unlocked milestone
 ```
 
 Important:
@@ -709,12 +667,12 @@ Responsible for:
 
 Responsible for:
 
-- detecting first finishes
-- setting baselines
-- detecting improvement milestones
-- detecting rank milestones
-- preventing duplicate milestone awards
-- returning point events to create
+- detecting first finishes (one-time per player per map)
+- evaluating medal rewards (bronze/silver/gold/author against map medal times)
+- evaluating club position rewards (top 20/10/5/1)
+- preventing duplicate milestone awards via `player_map_milestones` table
+- recalculation (rebuilds all point events from stored records)
+- all operations are wrapped in database transactions
 
 ### PointEventService
 
@@ -737,60 +695,65 @@ Auth test cases:
 4. Non-admin users cannot access admin routes.
 5. Admin users can access admin routes.
 
-Scoring test cases:
+Scoring test cases (medal-based system):
 
-1. Player gets finish points once.
-2. Player gets first seasonal time points once.
-3. Player with no previous time uses first finish as baseline.
-4. First finish does not grant improvement points.
-5. Improvement milestone is awarded once.
-6. Multiple crossed milestones in one poll are all awarded once.
-7. Repeated polling with same time does not duplicate events.
-8. Worse times do not change current best.
-9. Better time updates current best.
-10. Rank milestones are awarded once.
-11. Admin adjustment events affect totals.
+1. Player gets first finish points once (not duplicated on subsequent calls).
+2. Bronze medal is awarded when time <= bronze_time.
+3. Gold medal awards bronze + silver + gold cumulatively.
+4. Author medal awards all four medals cumulatively.
+5. No medals are awarded when time exceeds all thresholds.
+6. Medals are not re-awarded on subsequent calls (milestone guard).
+7. Improving from bronze to gold awards only the new medals (silver + gold), not bronze again.
+8. Position rewards use `current_position` (club-relative), not `global_position`.
+9. Position rewards are awarded once per threshold.
+10. Recalculation produces deterministic results (same events/totals on repeated runs).
+11. No improvement_* event types are ever created.
+12. Player improving position from 15 to 3 gets only the new position milestones (top_10 + top_5), not top_20 again.
 
 ---
 
 ## Example Scoring Scenario
 
-Player has baseline of 31.500 on a map.
+Map has medal times: bronze=60.000, silver=50.000, gold=43.000, author=37.000
 
-Poll 1:
+**Player A — strong first attempt (37.000s, club position #1):**
 
 ```txt
-Current time: 31.300
-Improvement: 200ms
-Award:
-- improvement_100ms +5
+First finish:                              +10
+Medal rewards (time <= author_time):
+  Bronze medal:                             +5
+  Silver medal:                            +10
+  Gold medal:                              +20
+  Author medal:                            +35
+Position rewards (club #1):
+  Entered Club Top 20:                     +10
+  Entered Club Top 10:                     +20
+  Entered Club Top 5:                      +35
+  Took 1st place in Club:                  +50
+Total:                                    +195
 ```
 
-Poll 2:
+**Player B — first attempt at 55.000s (position #30):**
 
 ```txt
-Current time: 31.180
-Improvement: 320ms
-Award:
-- improvement_250ms +10
+First finish:                              +10
+(No medals — 55.000 > bronze_time of 60.000)
+(No position rewards — position 30 > 20)
+Total:                                     +10
 ```
 
-Poll 3:
+**Player B improves to 42.000s (position #12):**
 
 ```txt
-Current time: 31.120
-Improvement: 380ms
-Award:
-- nothing new
-```
-
-Poll 4:
-
-```txt
-Current time: 30.980
-Improvement: 520ms
-Award:
-- improvement_500ms +15
+No first finish (already awarded)
+Medal rewards (time 42.000 <= gold_time 43.000):
+  Bronze medal:                             +5
+  Silver medal:                            +10
+  Gold medal:                              +20
+Position rewards (club #12):
+  Entered Club Top 20:                     +10
+  Entered Club Top 10:                     +20
+Total from this poll:                      +65
 ```
 
 ---

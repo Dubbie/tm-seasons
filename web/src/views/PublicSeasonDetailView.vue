@@ -3,23 +3,48 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import { useAuth } from '@/composables/useAuth'
 import {
+  pollSeason,
   publicSeason,
   publicSeasonLeaderboard,
   type ApiSeason,
   type ApiSeasonLeaderboardEntry,
 } from '@/lib/api'
 
+const auth = useAuth()
 const route = useRoute()
 const season = ref<ApiSeason | null>(null)
 const leaderboard = ref<{ map: { id: number; name: string | null; uid: string }; entries: ApiSeasonLeaderboardEntry[] }[]>([])
 const activeMapIndex = ref(0)
 const loading = ref(false)
+const polling = ref(false)
+const pollResult = ref<string | null>(null)
+const pollError = ref<string | null>(null)
 
 const activeEntries = computed(() => leaderboard.value[activeMapIndex.value]?.entries ?? [])
 const activeMap = computed(() => leaderboard.value[activeMapIndex.value]?.map)
 const lbError = ref<string | null>(null)
+
+async function triggerPoll(): Promise<void> {
+  if (!season.value) return
+
+  polling.value = true
+  pollResult.value = null
+  pollError.value = null
+
+  try {
+    const result = await pollSeason(season.value.id)
+    pollResult.value = `Polled: ${result.maps_processed} maps, ${result.snapshots_created} snapshots`
+    await loadSeason()
+  } catch (err) {
+    pollError.value = err instanceof Error ? err.message : 'Poll failed'
+  } finally {
+    polling.value = false
+  }
+}
 
 async function loadSeason(): Promise<void> {
   loading.value = true
@@ -58,8 +83,36 @@ onMounted(loadSeason)
         <h1 class="text-2xl font-semibold text-slate-900">Season Detail</h1>
         <p v-if="loading" class="mt-2 text-sm text-slate-500">Loading...</p>
         <template v-else-if="season">
-          <h2 class="mt-2 text-xl font-semibold text-slate-900">{{ season.name }}</h2>
-          <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
+          <div class="mt-2 flex items-start justify-between">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">{{ season.name }}</h2>
+              <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <UiButton
+                v-if="auth.isAdmin.value"
+                size="sm"
+                :disabled="polling"
+                @click="triggerPoll"
+              >
+                {{ polling ? 'Polling...' : 'Trigger Poll' }}
+              </UiButton>
+              <RouterLink
+                :to="`/seasons/${season.slug}/standings`"
+                class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Standings
+              </RouterLink>
+              <RouterLink
+                :to="`/seasons/${season.slug}/events`"
+                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Events
+              </RouterLink>
+            </div>
+          </div>
+          <p v-if="pollResult" class="mt-3 text-sm text-green-700">{{ pollResult }}</p>
+          <p v-if="pollError" class="mt-3 text-sm text-red-700">{{ pollError }}</p>
         </template>
       </UiCard>
 
@@ -102,7 +155,16 @@ onMounted(loadSeason)
               <tbody>
                 <tr v-for="(entry, index) in activeEntries" :key="entry.id" class="border-b last:border-b-0">
                   <td class="py-2 pr-4 text-slate-700">{{ index + 1 }}</td>
-                  <td class="py-2 pr-4 font-medium text-slate-900">{{ entry.player?.display_name ?? 'Unknown' }}</td>
+                  <td class="py-2 pr-4 font-medium text-slate-900">
+                    <RouterLink
+                      v-if="entry.player"
+                      :to="`/seasons/${season?.slug}/players/${entry.trackmania_player_id}`"
+                      class="text-blue-600 hover:text-blue-800"
+                    >
+                      {{ entry.player?.display_name ?? 'Unknown' }}
+                    </RouterLink>
+                    <span v-else>{{ entry.player?.display_name ?? 'Unknown' }}</span>
+                  </td>
                   <td class="py-2 text-slate-700">{{ formatScore(entry.time_ms) }}</td>
                 </tr>
               </tbody>

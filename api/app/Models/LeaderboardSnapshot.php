@@ -12,7 +12,8 @@ class LeaderboardSnapshot extends Model
         'season_id',
         'map_id',
         'trackmania_player_id',
-        'position',
+        'global_position',
+        'current_position',
         'time_ms',
         'zone_name',
         'recorded_at',
@@ -21,7 +22,8 @@ class LeaderboardSnapshot extends Model
     protected function casts(): array
     {
         return [
-            'position' => 'integer',
+            'global_position' => 'integer',
+            'current_position' => 'integer',
             'time_ms' => 'integer',
             'recorded_at' => 'datetime',
         ];

@@ -12,6 +12,7 @@ use App\Models\Season;
 use App\Models\SeasonMapPlayerRecord;
 use App\Models\TrackmaniaClub;
 use App\Models\TrackmaniaPlayer;
+use App\Services\Scoring\SeasonScoringService;
 use App\Services\Trackmania\SeasonLeaderboardPollingService;
 use App\Services\Trackmania\TrackmaniaClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,7 +32,9 @@ class SeasonLeaderboardPollingServiceTest extends TestCase
         parent::setUp();
 
         $this->client = Mockery::mock(TrackmaniaClient::class);
-        $this->service = new SeasonLeaderboardPollingService($this->client);
+        $scoringService = Mockery::mock(SeasonScoringService::class);
+        $scoringService->shouldIgnoreMissing();
+        $this->service = new SeasonLeaderboardPollingService($this->client, $scoringService);
     }
 
     private function createClubWithPlayer(): TrackmaniaPlayer
@@ -90,7 +93,8 @@ class SeasonLeaderboardPollingServiceTest extends TestCase
         $this->assertDatabaseHas('leaderboard_snapshots', [
             'map_id' => $map->id,
             'trackmania_player_id' => $player->id,
-            'position' => 1,
+            'global_position' => 1,
+            'current_position' => 1,
             'time_ms' => 45000,
             'zone_name' => 'World',
         ]);
@@ -122,7 +126,9 @@ class SeasonLeaderboardPollingServiceTest extends TestCase
             'map_id' => $map->id,
             'trackmania_player_id' => $player->id,
             'global_position' => 1,
+            'current_position' => 1,
             'time_ms' => 45000,
+            'baseline_time_ms' => 45000,
             'total_improvements' => 0,
         ]);
     }
@@ -451,5 +457,46 @@ class SeasonLeaderboardPollingServiceTest extends TestCase
 
         $this->assertSame(0, $result['maps_processed']);
         $this->assertSame(0, $result['snapshots_created']);
+    }
+
+    public function test_current_position_calculated_correctly(): void
+    {
+        $season = Season::query()->create(['name' => 'Test Season', 'is_active' => true]);
+        $map = Map::query()->create(['uid' => 'map-1', 'name' => 'Map 1']);
+        $season->maps()->attach($map->id, ['order_index' => 1, 'is_active' => true]);
+
+        $club = TrackmaniaClub::query()->create(['club_id' => '123', 'name' => 'Club', 'is_primary' => true]);
+        $player1 = TrackmaniaPlayer::query()->create(['account_id' => 'player-a', 'display_name' => 'Player A']);
+        $player2 = TrackmaniaPlayer::query()->create(['account_id' => 'player-b', 'display_name' => 'Player B']);
+
+        foreach ([$player1, $player2] as $player) {
+            ClubMember::query()->create([
+                'trackmania_club_id' => $club->id,
+                'trackmania_player_id' => $player->id,
+                'is_active' => true,
+            ]);
+        }
+
+        $this->client->shouldReceive('getMapLeaderboard')
+            ->once()
+            ->with('map-1', 100, 0)
+            ->andReturn(new TrackmaniaLeaderboard('Personal_Best', 'map-1', [
+                new TrackmaniaLeaderboardEntry('player-a', 3, 45000, 1000000, 'world', 'World'),
+                new TrackmaniaLeaderboardEntry('player-b', 4, 46000, 1000001, 'world', 'World'),
+            ]));
+
+        $this->service->pollSeason($season);
+
+        $this->assertDatabaseHas('season_map_player_records', [
+            'trackmania_player_id' => $player1->id,
+            'global_position' => 3,
+            'current_position' => 1,
+        ]);
+
+        $this->assertDatabaseHas('season_map_player_records', [
+            'trackmania_player_id' => $player2->id,
+            'global_position' => 4,
+            'current_position' => 2,
+        ]);
     }
 }

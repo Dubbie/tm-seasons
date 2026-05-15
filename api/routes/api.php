@@ -7,11 +7,13 @@ use App\Http\Controllers\Admin\AdminMapController;
 use App\Http\Controllers\Admin\AdminSeasonController;
 use App\Http\Controllers\Admin\AdminSeasonMapController;
 use App\Http\Controllers\Admin\AdminSeasonPollController;
+use App\Http\Controllers\Admin\AdminSeasonScoringController;
 use App\Http\Controllers\Auth\DiscordAuthController;
 use App\Http\Controllers\Public\PublicClubController;
 use App\Http\Controllers\Public\PublicMapController;
 use App\Http\Controllers\Public\PublicSeasonController;
 use App\Http\Controllers\Public\PublicSeasonLeaderboardController;
+use App\Http\Controllers\Public\PublicSeasonScoringController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/me', [DiscordAuthController::class, 'me'])->middleware('auth:sanctum')->name('me');
@@ -21,6 +23,10 @@ Route::name('seasons.')->group(function (): void {
     Route::get('/seasons/{slug}', [PublicSeasonController::class, 'show'])->name('show');
     Route::get('/seasons/{slug}/leaderboard', [PublicSeasonLeaderboardController::class, 'seasonLeaderboard'])->name('leaderboard');
     Route::get('/seasons/{slug}/maps/{map}/leaderboard', [PublicSeasonLeaderboardController::class, 'mapLeaderboard'])->name('maps.leaderboard');
+
+    Route::get('/seasons/{slug}/standings', [PublicSeasonScoringController::class, 'standings'])->name('standings');
+    Route::get('/seasons/{slug}/events', [PublicSeasonScoringController::class, 'events'])->name('events');
+    Route::get('/seasons/{slug}/players/{player}', [PublicSeasonScoringController::class, 'player'])->name('player');
 });
 
 Route::get('/maps/{uid}', [PublicMapController::class, 'show'])->name('maps.show');
@@ -57,6 +63,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
     Route::name('seasons.')->group(function (): void {
         Route::post('/seasons/{season}/poll', [AdminSeasonPollController::class, 'poll'])->name('poll');
         Route::get('/seasons/{season}/records', [AdminSeasonPollController::class, 'records'])->name('records');
+
+        Route::get('/seasons/{season}/points', [AdminSeasonScoringController::class, 'standings'])->name('points');
+        Route::get('/seasons/{season}/events', [AdminSeasonScoringController::class, 'events'])->name('events');
+        Route::post('/seasons/{season}/recalculate', [AdminSeasonScoringController::class, 'recalculate'])->name('recalculate')->middleware('throttle:3,10');
     });
 
     Route::name('clubs.')->group(function (): void {

@@ -5,6 +5,7 @@ import AdminClubDetailView from '@/views/AdminClubDetailView.vue'
 import AdminClubsView from '@/views/AdminClubsView.vue'
 import AdminMapsView from '@/views/AdminMapsView.vue'
 import AdminSeasonEditView from '@/views/AdminSeasonEditView.vue'
+import AdminSeasonEventsView from '@/views/AdminSeasonEventsView.vue'
 import AdminSeasonLeaderboardView from '@/views/AdminSeasonLeaderboardView.vue'
 import AdminSeasonsView from '@/views/AdminSeasonsView.vue'
 import AdminView from '@/views/AdminView.vue'
@@ -12,8 +13,11 @@ import AuthCallbackView from '@/views/AuthCallbackView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
 import PublicClubDetailView from '@/views/PublicClubDetailView.vue'
+import PublicPlayerSeasonView from '@/views/PublicPlayerSeasonView.vue'
 import PublicSeasonDetailView from '@/views/PublicSeasonDetailView.vue'
+import PublicSeasonEventsView from '@/views/PublicSeasonEventsView.vue'
 import PublicSeasonsView from '@/views/PublicSeasonsView.vue'
+import PublicSeasonStandingsView from '@/views/PublicSeasonStandingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -94,12 +98,32 @@ const router = createRouter({
       },
     },
     {
+      path: '/admin/seasons/:id/events',
+      component: AdminSeasonEventsView,
+      meta: {
+        requiresAuth: true,
+        requiresAdmin: true,
+      },
+    },
+    {
       path: '/seasons',
       component: PublicSeasonsView,
     },
     {
       path: '/seasons/:slug',
       component: PublicSeasonDetailView,
+    },
+    {
+      path: '/seasons/:slug/standings',
+      component: PublicSeasonStandingsView,
+    },
+    {
+      path: '/seasons/:slug/events',
+      component: PublicSeasonEventsView,
+    },
+    {
+      path: '/seasons/:slug/players/:player',
+      component: PublicPlayerSeasonView,
     },
 
     {

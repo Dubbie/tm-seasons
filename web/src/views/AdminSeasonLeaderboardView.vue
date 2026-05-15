@@ -61,7 +61,7 @@ async function triggerPoll(): Promise<void> {
 
   try {
     const result = await pollSeason(seasonId.value)
-    pollResult.value = `Completed: ${result.maps_processed} maps, ${result.snapshots_created} snapshots, ${result.improvements_detected} improvements`
+    pollResult.value = `Completed: ${result.maps_processed} maps, ${result.snapshots_created} snapshots, ${result.records_updated} records updated`
     await loadData()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Poll failed'
@@ -97,8 +97,20 @@ onMounted(loadData)
   <main class="px-4 py-6 sm:px-6">
     <div class="mx-auto max-w-6xl space-y-4">
       <UiCard>
-        <h1 class="text-2xl font-semibold text-slate-900">Season Leaderboard</h1>
-        <p v-if="season" class="mt-1 text-sm text-slate-600">{{ season.name }} ({{ season.slug }})</p>
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold text-slate-900">Season Leaderboard</h1>
+            <p v-if="season" class="mt-1 text-sm text-slate-600">{{ season.name }} ({{ season.slug }})</p>
+          </div>
+          <div v-if="season" class="flex gap-2">
+            <RouterLink
+              :to="`/admin/seasons/${season.id}/events`"
+              class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              View Events
+            </RouterLink>
+          </div>
+        </div>
 
         <div class="mt-4 flex items-center gap-3">
           <UiButton :disabled="polling" @click="triggerPoll">
