@@ -5,11 +5,19 @@ namespace App\Services\Trackmania;
 use App\DTOs\Trackmania\TrackmaniaLeaderboard;
 use App\DTOs\Trackmania\TrackmaniaMap;
 use App\Exceptions\Trackmania\TrackmaniaClientException;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Http;
 
 class TrackmaniaClient
 {
+    private const BASE_URL_DEFAULT = 'https://live-services.trackmania.nadeo.live';
+    private const AUDIENCE_DEFAULT = 'NadeoLiveServices';
+    private const RETRY_TIMES_DEFAULT = 3;
+    private const RETRY_SLEEP_MS_DEFAULT = 200;
+    private const TIMEOUT_SECONDS_DEFAULT = 10;
+    private const USER_AGENT_DEFAULT = 'tm-bot/1.0 (+https://example.com)';
+
     public function __construct(
         private readonly TrackmaniaTokenService $tokenService,
     ) {
@@ -20,18 +28,8 @@ class TrackmaniaClient
         $response = $this->request()
             ->get(sprintf('/api/token/map/%s', urlencode($mapUid)));
 
-        if ($response->status() === 404) {
-            throw new TrackmaniaClientException(sprintf('Trackmania map not found for uid [%s].', $mapUid));
-        }
-
-        if (! $response->successful()) {
-            throw new TrackmaniaClientException(sprintf('Trackmania map request failed with status [%d].', $response->status()));
-        }
-
-        $payload = $response->json();
-        if (! is_array($payload)) {
-            $payload = [];
-        }
+        $this->ensureSuccessful($response, 'map', $mapUid);
+        $payload = $this->arrayPayload($response);
 
         return TrackmaniaMap::fromApiResponse($mapUid, $payload);
     }
@@ -49,33 +47,50 @@ class TrackmaniaClient
                 'onlyWorld' => 'true',
             ]);
 
-        if (! $response->successful()) {
-            throw new TrackmaniaClientException(sprintf('Trackmania leaderboard request failed with status [%d].', $response->status()));
-        }
-
-        $payload = $response->json();
-        if (! is_array($payload)) {
-            $payload = [];
-        }
+        $this->ensureSuccessful($response, 'leaderboard', $mapUid);
+        $payload = $this->arrayPayload($response);
 
         return TrackmaniaLeaderboard::fromApiResponse($mapUid, $groupUid, $payload);
     }
 
     private function request(): PendingRequest
     {
-        $baseUrl = rtrim((string) config('trackmania.base_url', 'https://live-services.trackmania.nadeo.live'), '/');
-        $token = $this->tokenService->getToken((string) config('trackmania.audience', 'NadeoLiveServices'));
+        $baseUrl = rtrim((string) config('trackmania.base_url', self::BASE_URL_DEFAULT), '/');
+        $token = $this->tokenService->getToken((string) config('trackmania.audience', self::AUDIENCE_DEFAULT));
 
         return Http::baseUrl($baseUrl)
             ->acceptJson()
+            ->withUserAgent((string) config('trackmania.user_agent', self::USER_AGENT_DEFAULT))
             ->retry(
-                (int) config('trackmania.retry_times', 3),
-                (int) config('trackmania.retry_sleep_ms', 200),
+                (int) config('trackmania.retry_times', self::RETRY_TIMES_DEFAULT),
+                (int) config('trackmania.retry_sleep_ms', self::RETRY_SLEEP_MS_DEFAULT),
                 throw: false,
             )
-            ->timeout((int) config('trackmania.timeout_seconds', 10))
+            ->timeout((int) config('trackmania.timeout_seconds', self::TIMEOUT_SECONDS_DEFAULT))
             ->withHeaders([
                 'Authorization' => sprintf('nadeo_v1 t=%s', $token),
             ]);
+    }
+
+    private function ensureSuccessful(Response $response, string $resource, string $mapUid): void
+    {
+        if ($resource === 'map' && $response->status() === 404) {
+            throw new TrackmaniaClientException(sprintf('Trackmania map not found for uid [%s].', $mapUid));
+        }
+
+        if (! $response->successful()) {
+            throw new TrackmaniaClientException(sprintf(
+                'Trackmania %s request failed with status [%d].',
+                $resource,
+                $response->status(),
+            ));
+        }
+    }
+
+    private function arrayPayload(Response $response): array
+    {
+        $payload = $response->json();
+
+        return is_array($payload) ? $payload : [];
     }
 }
