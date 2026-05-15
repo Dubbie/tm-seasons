@@ -106,7 +106,7 @@ Artisan::command('season:update-statuses', function (SeasonLifecycleService $lif
 
 // Scheduler automation for season lifecycle + leaderboard polling.
 Schedule::command('season:update-statuses')->everyMinute();
-Schedule::command('season:poll-active')->everyFiveMinutes();
+Schedule::command('season:poll-active')->everyMinute();
 
 Artisan::command('users:make-admin {discord_id}', function (string $discord_id): int {
     $user = User::query()->where('discord_id', $discord_id)->first();
