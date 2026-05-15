@@ -9,6 +9,7 @@ import {
   type ApiPointEvent,
   type ApiSeason,
 } from '@/lib/api'
+import { describeEvent } from '@/lib/eventDescriptions'
 
 const route = useRoute()
 const season = ref<ApiSeason | null>(null)
@@ -123,7 +124,7 @@ onMounted(loadData)
                 >
                   {{ event.player?.display_name ?? 'Unknown' }}
                 </RouterLink>
-                <span v-if="event.description" class="ml-1">{{ event.description }}</span>
+                <span class="ml-1">{{ describeEvent(event) }}</span>
               </span>
             </div>
             <span class="whitespace-nowrap text-xs text-slate-400">

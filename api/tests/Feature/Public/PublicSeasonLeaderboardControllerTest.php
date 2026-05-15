@@ -15,7 +15,7 @@ class PublicSeasonLeaderboardControllerTest extends TestCase
 
     public function test_season_leaderboard_returns_grouped_data(): void
     {
-        $season = Season::query()->create(['name' => 'Test Season', 'slug' => 'test-season', 'is_active' => true]);
+        $season = Season::query()->create(['name' => 'Test Season', 'slug' => 'test-season', 'status' => 'active']);
         $map = Map::query()->create(['uid' => 'map-1', 'name' => 'Map 1']);
         $season->maps()->attach($map->id, ['order_index' => 1, 'is_active' => true]);
 
@@ -38,7 +38,7 @@ class PublicSeasonLeaderboardControllerTest extends TestCase
 
     public function test_map_leaderboard_returns_entries(): void
     {
-        $season = Season::query()->create(['name' => 'Test Season', 'slug' => 'test-season']);
+        $season = Season::query()->create(['name' => 'Test Season', 'slug' => 'test-season', 'status' => 'active']);
         $map = Map::query()->create(['uid' => 'map-1', 'name' => 'Map 1']);
 
         $player = TrackmaniaPlayer::query()->create(['account_id' => 'player-1', 'display_name' => 'Player 1']);
@@ -63,7 +63,7 @@ class PublicSeasonLeaderboardControllerTest extends TestCase
 
     public function test_season_leaderboard_returns_empty_for_no_records(): void
     {
-        $season = Season::query()->create(['name' => 'Empty Season', 'slug' => 'empty-season']);
+        $season = Season::query()->create(['name' => 'Empty Season', 'slug' => 'empty-season', 'status' => 'active']);
 
         $response = $this->getJson("/api/seasons/{$season->slug}/leaderboard")
             ->assertOk();

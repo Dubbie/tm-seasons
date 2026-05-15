@@ -47,7 +47,10 @@ onMounted(loadData)
         <div class="flex items-start justify-between">
           <div>
             <h1 class="text-2xl font-semibold text-slate-900">Season Standings</h1>
-            <p v-if="season" class="mt-1 text-sm text-slate-600">{{ season.name }}</p>
+            <div v-if="season" class="mt-1 flex items-center gap-2 text-sm text-slate-600">
+              <span>{{ season.name }}</span>
+              <UiBadge v-if="season.status === 'finalized'" variant="success">Final Standings</UiBadge>
+            </div>
           </div>
           <div v-if="season" class="flex gap-2">
             <RouterLink

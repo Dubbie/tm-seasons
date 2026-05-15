@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import { useAuth } from '@/composables/useAuth'
+import { displayTrackmaniaMapName } from '@/lib/trackmaniaText'
 import {
   pollSeason,
   publicSeason,
@@ -27,6 +28,41 @@ const pollError = ref<string | null>(null)
 const activeEntries = computed(() => leaderboard.value[activeMapIndex.value]?.entries ?? [])
 const activeMap = computed(() => leaderboard.value[activeMapIndex.value]?.map)
 const lbError = ref<string | null>(null)
+
+const now = ref(Date.now())
+let timer: ReturnType<typeof setInterval> | null = null
+
+const countdownLabel = computed(() => {
+  if (!season.value) return null
+
+  if (season.value.status === 'scheduled' && season.value.starts_at) {
+    const ms = new Date(season.value.starts_at).getTime() - now.value
+    if (ms > 0) return `Starts in ${formatDuration(ms)}`
+  }
+
+  if (season.value.status === 'active' && season.value.ends_at) {
+    const ms = new Date(season.value.ends_at).getTime() - now.value
+    if (ms > 0) return `Ends in ${formatDuration(ms)}`
+  }
+
+  return null
+})
+
+function statusBadge(status: ApiSeason['status']): string {
+  if (status === 'scheduled') return 'Upcoming'
+  if (status === 'active') return 'Active'
+  if (status === 'ended') return 'Ended'
+  if (status === 'finalized') return 'Finalized'
+  return 'Draft'
+}
+
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  return `${days}d ${hours}h ${minutes}m`
+}
 
 async function triggerPoll(): Promise<void> {
   if (!season.value) return
@@ -73,7 +109,18 @@ function formatScore(ms: number | null): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`
 }
 
-onMounted(loadSeason)
+onMounted(() => {
+  loadSeason()
+  timer = setInterval(() => {
+    now.value = Date.now()
+  }, 30000)
+})
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+  }
+})
 </script>
 
 <template>
@@ -85,14 +132,18 @@ onMounted(loadSeason)
         <template v-else-if="season">
           <div class="mt-2 flex items-start justify-between">
             <div>
-              <h2 class="text-xl font-semibold text-slate-900">{{ season.name }}</h2>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-semibold text-slate-900">{{ season.name }}</h2>
+                <UiBadge>{{ statusBadge(season.status) }}</UiBadge>
+              </div>
               <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
+              <p v-if="countdownLabel" class="mt-1 text-sm text-slate-500">{{ countdownLabel }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <UiButton
                 v-if="auth.isAdmin.value"
                 size="sm"
-                :disabled="polling"
+                :disabled="polling || season.status !== 'active'"
                 @click="triggerPoll"
               >
                 {{ polling ? 'Polling...' : 'Trigger Poll' }}
@@ -120,7 +171,7 @@ onMounted(loadSeason)
         <h3 class="text-lg font-semibold text-slate-900">Maps</h3>
         <ul class="mt-3 space-y-2">
           <li v-for="map in season.maps || []" :key="map.id" class="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-            <span>{{ map.season_pivot?.order_index ?? 0 }} - {{ map.name || map.uid }}</span>
+            <span>{{ map.season_pivot?.order_index ?? 0 }} - {{ displayTrackmaniaMapName(map.name, map.uid) }}</span>
             <UiBadge v-if="map.season_pivot?.is_active === false" variant="neutral">inactive</UiBadge>
           </li>
         </ul>
@@ -137,12 +188,12 @@ onMounted(loadSeason)
             :class="idx === activeMapIndex ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
             @click="activeMapIndex = idx"
           >
-            {{ item.map.name || `Map ${idx + 1}` }}
+            {{ displayTrackmaniaMapName(item.map.name, item.map.uid) || `Map ${idx + 1}` }}
           </button>
         </div>
 
         <UiCard v-if="activeEntries.length">
-          <h3 class="text-lg font-semibold text-slate-900">{{ activeMap?.name ?? 'Unknown Map' }}</h3>
+          <h3 class="text-lg font-semibold text-slate-900">{{ activeMap ? displayTrackmaniaMapName(activeMap.name, activeMap.uid) : 'Unknown Map' }}</h3>
           <div class="mt-3 overflow-x-auto">
             <table class="w-full text-left text-sm">
               <thead>
@@ -163,7 +214,7 @@ onMounted(loadSeason)
                     >
                       {{ entry.player?.display_name ?? 'Unknown' }}
                     </RouterLink>
-                    <span v-else>{{ entry.player?.display_name ?? 'Unknown' }}</span>
+                    <span v-else>Unknown</span>
                   </td>
                   <td class="py-2 text-slate-700">{{ formatScore(entry.time_ms) }}</td>
                 </tr>

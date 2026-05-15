@@ -10,7 +10,7 @@ return [
         'author' => 35,
     ],
 
-    'position_rewards' => [
+    'final_position_rewards' => [
         20 => 10,
         10 => 20,
         5 => 35,

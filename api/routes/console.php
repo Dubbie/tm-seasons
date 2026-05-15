@@ -3,6 +3,8 @@
 use App\Exceptions\Trackmania\TrackmaniaClientException;
 use App\Exceptions\Trackmania\TrackmaniaTokenException;
 use App\Models\Season;
+use App\Models\SeasonStatus;
+use App\Services\Scoring\SeasonLifecycleService;
 use App\Models\User;
 use App\Services\Trackmania\SeasonLeaderboardPollingService;
 use App\Services\Trackmania\TrackmaniaClient;
@@ -82,7 +84,7 @@ Artisan::command('season:poll {seasonId}', function (string $seasonId): int {
 })->purpose('Poll leaderboard data for a season by ID');
 
 Artisan::command('season:poll-active', function (): int {
-    $season = Season::query()->where('is_active', true)->first();
+    $season = Season::query()->where('status', SeasonStatus::Active)->first();
 
     if (! $season) {
         $this->warn('No active season found.');
@@ -95,8 +97,16 @@ Artisan::command('season:poll-active', function (): int {
     return $this->call('season:poll', ['seasonId' => (string) $season->id]);
 })->purpose('Poll leaderboard data for the currently active season');
 
-// Schedule: poll active season every 5 minutes
-// Schedule::command('season:poll-active')->everyFiveMinutes();
+Artisan::command('season:update-statuses', function (SeasonLifecycleService $lifecycleService): int {
+    $result = $lifecycleService->updateAutomaticStatuses();
+    $this->info(sprintf('Activated: %d, Ended: %d', count($result['activated']), count($result['ended'])));
+
+    return self::SUCCESS;
+})->purpose('Apply automatic season lifecycle transitions');
+
+// Scheduler automation for season lifecycle + leaderboard polling.
+Schedule::command('season:update-statuses')->everyMinute();
+Schedule::command('season:poll-active')->everyFiveMinutes();
 
 Artisan::command('users:make-admin {discord_id}', function (string $discord_id): int {
     $user = User::query()->where('discord_id', $discord_id)->first();

@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSeasonRequest;
 use App\Http\Requests\Admin\UpdateSeasonRequest;
 use App\Http\Resources\SeasonResource;
+use App\Models\SeasonStatus;
 use App\Models\Season;
+use App\Services\Scoring\SeasonLifecycleService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 class AdminSeasonController extends Controller
@@ -31,21 +34,25 @@ class AdminSeasonController extends Controller
         return new SeasonResource($season);
     }
 
-    public function store(StoreSeasonRequest $request): SeasonResource
+    public function store(StoreSeasonRequest $request, SeasonLifecycleService $lifecycleService): SeasonResource
     {
         $season = Season::query()->create([
             ...$request->validated(),
+            'status' => $request->string('status', SeasonStatus::Draft->value)->toString(),
             'created_by_user_id' => $request->user()?->id,
         ]);
+
+        $lifecycleService->assertTransitionAllowed($season, $season->status);
 
         $season->load('createdBy');
 
         return new SeasonResource($season);
     }
 
-    public function update(UpdateSeasonRequest $request, Season $season): SeasonResource
+    public function update(UpdateSeasonRequest $request, Season $season, SeasonLifecycleService $lifecycleService): SeasonResource
     {
         $season->fill($request->validated());
+        $lifecycleService->assertTransitionAllowed($season, $season->status);
         $season->save();
 
         $season->load([
@@ -61,5 +68,21 @@ class AdminSeasonController extends Controller
         $season->delete();
 
         return response()->noContent();
+    }
+
+    public function finalize(Season $season, SeasonLifecycleService $lifecycleService): JsonResponse
+    {
+        try {
+            $result = $lifecycleService->finalizeSeason($season, (int) request()->user()?->id);
+        } catch (\RuntimeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        return response()->json(['data' => $result]);
+    }
+
+    public function updateStatuses(SeasonLifecycleService $lifecycleService): JsonResponse
+    {
+        return response()->json(['data' => $lifecycleService->updateAutomaticStatuses()]);
     }
 }

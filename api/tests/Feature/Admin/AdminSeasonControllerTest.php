@@ -3,6 +3,8 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Map;
+use App\Models\SeasonMapPlayerRecord;
+use App\Models\TrackmaniaPlayer;
 use App\Models\Season;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,14 +14,16 @@ class AdminSeasonControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_crud_seasons_and_only_one_active(): void
+    public function test_admin_can_crud_seasons(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
 
         $first = $this->actingAs($admin)
             ->postJson('/api/admin/seasons', [
                 'name' => 'Summer Series',
-                'is_active' => true,
+                'status' => 'active',
+                'starts_at' => now()->subDay()->toIso8601String(),
+                'ends_at' => now()->addDay()->toIso8601String(),
             ])
             ->assertCreated()
             ->assertJsonPath('data.slug', 'summer-series')
@@ -28,14 +32,14 @@ class AdminSeasonControllerTest extends TestCase
         $second = $this->actingAs($admin)
             ->postJson('/api/admin/seasons', [
                 'name' => 'Winter Series',
-                'is_active' => true,
+                'status' => 'draft',
             ])
             ->assertCreated()
             ->assertJsonPath('data.slug', 'winter-series')
             ->json('data');
 
-        $this->assertDatabaseHas('seasons', ['id' => $second['id'], 'is_active' => true]);
-        $this->assertDatabaseHas('seasons', ['id' => $first['id'], 'is_active' => false]);
+        $this->assertDatabaseHas('seasons', ['id' => $first['id'], 'status' => 'active']);
+        $this->assertDatabaseHas('seasons', ['id' => $second['id'], 'status' => 'draft']);
 
         $this->actingAs($admin)
             ->patchJson('/api/admin/seasons/'.$second['id'], ['name' => 'Winter Split'])
@@ -68,5 +72,36 @@ class AdminSeasonControllerTest extends TestCase
 
         $this->assertSame('B', $response->json('data.maps.0.uid'));
         $this->assertSame('A', $response->json('data.maps.1.uid'));
+    }
+
+    public function test_admin_can_finalize_ended_season(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $season = Season::query()->create([
+            'name' => 'Finalize Me',
+            'status' => 'ended',
+            'starts_at' => now()->subDays(2),
+            'ends_at' => now()->subDay(),
+            'created_by_user_id' => $admin->id,
+        ]);
+        $player = TrackmaniaPlayer::query()->create(['account_id' => 'p-1', 'display_name' => 'Player 1']);
+        $map = Map::query()->create(['uid' => 'map-final', 'name' => 'Map Final']);
+
+        SeasonMapPlayerRecord::query()->create([
+            'season_id' => $season->id,
+            'map_id' => $map->id,
+            'trackmania_player_id' => $player->id,
+            'time_ms' => 42000,
+            'current_position' => 1,
+            'first_seen_at' => now(),
+            'last_seen_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson('/api/admin/seasons/'.$season->id.'/finalize')
+            ->assertOk()
+            ->assertJsonPath('data.players_processed', 1);
+
+        $this->assertDatabaseHas('seasons', ['id' => $season->id, 'status' => 'finalized']);
     }
 }

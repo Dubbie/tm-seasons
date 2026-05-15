@@ -15,6 +15,12 @@ class AdminSeasonPollController extends Controller
 {
     public function poll(Season $season, SeasonLeaderboardPollingService $pollingService): JsonResponse
     {
+        if (! $season->canPoll()) {
+            return response()->json([
+                'message' => 'Only active seasons can be polled.',
+            ], 422);
+        }
+
         try {
             $result = $pollingService->pollSeason($season);
         } catch (\Throwable $exception) {

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSeasonRequest extends FormRequest
 {
@@ -16,9 +17,9 @@ class UpdateSeasonRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'is_active' => ['sometimes', 'boolean'],
+            'starts_at' => [Rule::requiredIf(fn () => in_array($this->input('status', $this->route('season')?->status?->value), ['scheduled', 'active'], true)), 'nullable', 'date'],
+            'ends_at' => [Rule::requiredIf(fn () => in_array($this->input('status', $this->route('season')?->status?->value), ['scheduled', 'active'], true)), 'nullable', 'date', 'after:starts_at'],
+            'status' => ['sometimes', 'string', 'in:draft,scheduled,active,ended,finalized'],
         ];
     }
 }

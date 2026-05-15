@@ -10,6 +10,8 @@ import {
   type ApiPlayerSeasonDetail,
   type ApiSeason,
 } from '@/lib/api'
+import { describeEvent } from '@/lib/eventDescriptions'
+import { displayTrackmaniaMapName } from '@/lib/trackmaniaText'
 
 const route = useRoute()
 const season = ref<ApiSeason | null>(null)
@@ -128,7 +130,7 @@ onMounted(loadData)
             >
               <div>
                 <span class="text-sm font-medium text-slate-900">{{ milestoneLabel(milestone.milestone_key) }}</span>
-                <span v-if="milestone.map" class="ml-2 text-sm text-slate-500">{{ milestone.map.name }}</span>
+                <span v-if="milestone.map" class="ml-2 text-sm text-slate-500">{{ displayTrackmaniaMapName(milestone.map.name, milestone.map.uid) }}</span>
               </div>
               <span class="text-xs text-slate-400">{{ new Date(milestone.achieved_at).toLocaleString() }}</span>
             </div>
@@ -156,7 +158,7 @@ onMounted(loadData)
                   {{ event.points > 0 ? '+' : '' }}{{ event.points }}
                 </span>
                 <span class="text-sm text-slate-700">
-                  {{ event.description ?? event.type }}
+                  {{ describeEvent(event) }}
                 </span>
               </div>
               <span class="text-xs text-slate-400">{{ event.created_at ? new Date(event.created_at).toLocaleString() : '' }}</span>

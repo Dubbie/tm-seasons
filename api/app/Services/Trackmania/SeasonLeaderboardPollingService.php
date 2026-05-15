@@ -28,6 +28,16 @@ class SeasonLeaderboardPollingService
 
     public function pollSeason(Season $season): array
     {
+        if (! $season->canPoll()) {
+            return [
+                'maps_processed' => 0,
+                'snapshots_created' => 0,
+                'records_updated' => 0,
+                'map_errors' => ['Season is not active.'],
+                'total_maps' => 0,
+            ];
+        }
+
         $poll = LeaderboardPoll::query()->create([
             'season_id' => $season->id,
             'status' => 'running',

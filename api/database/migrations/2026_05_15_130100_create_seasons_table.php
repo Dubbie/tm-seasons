@@ -15,7 +15,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('ends_at')->nullable();
-            $table->boolean('is_active')->default(false);
+            $table->string('status')->default('draft');
+            $table->timestamp('finalized_at')->nullable();
+            $table->foreignId('finalized_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });

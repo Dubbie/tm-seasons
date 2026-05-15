@@ -17,10 +17,18 @@ async function loadSeasons(): Promise<void> {
   }
 }
 
-function statusVariant(status: string): 'neutral' | 'success' | 'warning' {
+function statusVariant(status: ApiSeason['status']): 'neutral' | 'success' | 'warning' {
   if (status === 'active') return 'success'
-  if (status === 'upcoming') return 'warning'
+  if (status === 'scheduled') return 'warning'
   return 'neutral'
+}
+
+function label(status: ApiSeason['status']): string {
+  if (status === 'scheduled') return 'Upcoming'
+  if (status === 'active') return 'Active'
+  if (status === 'ended') return 'Ended'
+  if (status === 'finalized') return 'Finalized'
+  return 'Draft'
 }
 
 onMounted(loadSeasons)
@@ -40,7 +48,7 @@ onMounted(loadSeasons)
             <RouterLink :to="`/seasons/${season.slug}`" class="text-lg font-semibold text-blue-700 hover:underline">
               {{ season.name }}
             </RouterLink>
-            <UiBadge :variant="statusVariant(season.status)">{{ season.status }}</UiBadge>
+            <UiBadge :variant="statusVariant(season.status)">{{ label(season.status) }}</UiBadge>
           </div>
           <p class="mt-1 text-sm text-slate-600">{{ season.description || 'No description yet' }}</p>
         </UiCard>

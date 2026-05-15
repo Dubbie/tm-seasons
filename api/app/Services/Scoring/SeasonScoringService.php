@@ -8,6 +8,7 @@ use App\Models\PlayerMapMilestone;
 use App\Models\PointEvent;
 use App\Models\Season;
 use App\Models\SeasonMapPlayerRecord;
+use App\Models\SeasonStatus;
 use App\Models\TrackmaniaClub;
 use App\Models\TrackmaniaPlayer;
 use Illuminate\Support\Collection;
@@ -24,6 +25,10 @@ class SeasonScoringService
         bool $isNew,
         ?\DateTimeInterface $createdAt = null,
     ): void {
+        if ($season->status !== SeasonStatus::Active) {
+            return;
+        }
+
         $existingMilestones = PlayerMapMilestone::query()
             ->where('season_id', $season->id)
             ->where('map_id', $map->id)
@@ -135,52 +140,6 @@ class SeasonScoringService
         }
     }
 
-    public function awardPositionRewards(
-        Season $season,
-        Map $map,
-        TrackmaniaPlayer $player,
-        int $newPosition,
-        array $existingMilestones = [],
-        ?\DateTimeInterface $createdAt = null,
-    ): void {
-        $rewardThresholds = config('season_scoring.position_rewards', []);
-
-        krsort($rewardThresholds);
-
-        foreach ($rewardThresholds as $positionThreshold => $points) {
-            if ($newPosition > $positionThreshold) {
-                continue;
-            }
-
-            $milestoneKey = 'entered_top_' . $positionThreshold;
-
-            if (in_array($milestoneKey, $existingMilestones, true)) {
-                continue;
-            }
-
-            $description = $positionThreshold === 1
-                ? 'Took 1st place in Club'
-                : 'Entered Club Top ' . $positionThreshold;
-
-            $this->createPointEvent(
-                season: $season,
-                map: $map,
-                player: $player,
-                type: $milestoneKey,
-                points: $points,
-                description: $description,
-                metadata: [
-                    'new_position' => $newPosition,
-                    'position_threshold' => $positionThreshold,
-                    'club_position' => $newPosition,
-                ],
-                createdAt: $createdAt,
-            );
-
-            $this->markMilestone($season, $map, $player, $milestoneKey, $createdAt);
-        }
-    }
-
     public function hasMilestone(Season $season, Map $map, TrackmaniaPlayer $player, string $milestoneKey): bool
     {
         return PlayerMapMilestone::query()
@@ -239,58 +198,6 @@ class SeasonScoringService
             'description' => $description,
             'metadata' => $metadata,
         ]);
-    }
-
-    public function finalizeSeason(Season $season): void
-    {
-        $mapIds = SeasonMapPlayerRecord::query()
-            ->where('season_id', $season->id)
-            ->whereNotNull('time_ms')
-            ->distinct()
-            ->pluck('map_id');
-
-        foreach ($mapIds as $mapId) {
-            $map = Map::find($mapId);
-
-            if ($map === null) {
-                continue;
-            }
-
-            $records = SeasonMapPlayerRecord::query()
-                ->where('season_id', $season->id)
-                ->where('map_id', $mapId)
-                ->whereNotNull('time_ms')
-                ->orderBy('time_ms')
-                ->get();
-
-            $clubPosition = 0;
-
-            foreach ($records as $record) {
-                $clubPosition++;
-
-                $player = $record->player;
-
-                if ($player === null) {
-                    continue;
-                }
-
-                $existingMilestones = PlayerMapMilestone::query()
-                    ->where('season_id', $season->id)
-                    ->where('map_id', $map->id)
-                    ->where('trackmania_player_id', $player->id)
-                    ->pluck('milestone_key')
-                    ->toArray();
-
-                $this->awardPositionRewards(
-                    season: $season,
-                    map: $map,
-                    player: $player,
-                    newPosition: $clubPosition,
-                    existingMilestones: $existingMilestones,
-                    createdAt: now(),
-                );
-            }
-        }
     }
 
     public function recalculate(Season $season): void

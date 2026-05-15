@@ -15,7 +15,7 @@ class PublicSeasonEndpointsTest extends TestCase
     {
         $season = Season::query()->create([
             'name' => 'Public Season',
-            'is_active' => true,
+            'status' => 'active',
             'description' => 'Public description',
         ]);
 
@@ -39,5 +39,17 @@ class PublicSeasonEndpointsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.uid', 'pub-1')
             ->assertJsonPath('data.name', 'Public 1');
+    }
+
+    public function test_draft_season_not_listed_publicly(): void
+    {
+        Season::query()->create([
+            'name' => 'Hidden Draft',
+            'status' => 'draft',
+        ]);
+
+        $this->getJson('/api/seasons')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 }

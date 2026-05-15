@@ -18,8 +18,9 @@ class SeasonResource extends JsonResource
             'description' => $this->description,
             'starts_at' => $this->starts_at?->toIso8601String(),
             'ends_at' => $this->ends_at?->toIso8601String(),
-            'is_active' => $this->is_active,
-            'status' => $this->statusLabel(),
+            'status' => $this->status?->value ?? 'draft',
+            'finalized_at' => $this->finalized_at?->toIso8601String(),
+            'finalized_by_user_id' => $this->finalized_by_user_id,
             'created_by_user_id' => $this->created_by_user_id,
             'created_by' => $this->whenLoaded('createdBy', fn () => [
                 'id' => $this->createdBy?->id,
@@ -30,24 +31,5 @@ class SeasonResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
-    }
-
-    private function statusLabel(): string
-    {
-        if ($this->is_active) {
-            return 'active';
-        }
-
-        $now = now();
-
-        if ($this->starts_at && $this->starts_at->isFuture()) {
-            return 'upcoming';
-        }
-
-        if ($this->ends_at && $this->ends_at->lt($now)) {
-            return 'finished';
-        }
-
-        return 'inactive';
     }
 }

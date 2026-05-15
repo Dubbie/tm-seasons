@@ -15,6 +15,7 @@ import {
   type ApiSeason,
   type ApiStandingEntry,
 } from '@/lib/api'
+import { describeEvent } from '@/lib/eventDescriptions'
 
 const route = useRoute()
 const season = ref<ApiSeason | null>(null)
@@ -109,7 +110,7 @@ function prevPage(): void {
   }
 }
 
-function eventBadgeVariant(type: string): string {
+function eventBadgeVariant(type: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
   if (type === 'first_finish') return 'success'
   if (type.startsWith('medal')) return 'info'
   if (type.startsWith('entered_top')) return 'warning'
@@ -205,7 +206,7 @@ onMounted(loadData)
                   <UiBadge :variant="eventBadgeVariant(event.type)">{{ event.type }}</UiBadge>
                 </td>
                 <td class="py-2 pr-3 text-slate-700">{{ event.player?.display_name ?? 'Unknown' }}</td>
-                <td class="py-2 pr-3 text-slate-600 max-w-md truncate">{{ event.description ?? '-' }}</td>
+                <td class="py-2 pr-3 text-slate-600 max-w-md truncate">{{ describeEvent(event) }}</td>
                 <td class="py-2 whitespace-nowrap text-slate-500">{{ event.created_at ? new Date(event.created_at).toLocaleString() : '' }}</td>
               </tr>
             </tbody>

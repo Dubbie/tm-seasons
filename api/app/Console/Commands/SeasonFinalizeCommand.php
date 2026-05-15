@@ -3,7 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Season;
-use App\Services\Scoring\SeasonScoringService;
+use App\Models\SeasonStatus;
+use App\Services\Scoring\SeasonLifecycleService;
 use Illuminate\Console\Command;
 
 class SeasonFinalizeCommand extends Command
@@ -12,7 +13,7 @@ class SeasonFinalizeCommand extends Command
 
     protected $description = 'Award positional points for a season based on final leaderboard standings';
 
-    public function handle(SeasonScoringService $scoringService): int
+    public function handle(SeasonLifecycleService $lifecycleService): int
     {
         $seasonId = $this->argument('season');
 
@@ -21,7 +22,7 @@ class SeasonFinalizeCommand extends Command
                 ? Season::query()->findOrFail((int) $seasonId)
                 : Season::query()->where('slug', $seasonId)->firstOrFail();
         } else {
-            $season = Season::query()->where('is_active', false)->latest('id')->first();
+            $season = Season::query()->where('status', SeasonStatus::Ended)->latest('id')->first();
 
             if (! $season) {
                 $this->error('No inactive season found. Specify a season ID or slug.');
@@ -32,7 +33,13 @@ class SeasonFinalizeCommand extends Command
 
         $this->info("Finalizing season [{$season->name}] ({$season->slug})..");
 
-        $scoringService->finalizeSeason($season);
+        if ($season->created_by_user_id === null) {
+            $this->error('Season has no creator assigned; use admin API finalization instead.');
+
+            return 1;
+        }
+
+        $lifecycleService->finalizeSeason($season, (int) $season->created_by_user_id);
 
         $this->info('Season finalized. Positional points awarded.');
 

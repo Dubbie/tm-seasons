@@ -6,6 +6,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import { adminMaps, deleteAdminMap, importAdminMap, type ApiMap } from '@/lib/api'
+import { displayTrackmaniaMapName } from '@/lib/trackmaniaText'
 
 const maps = ref<ApiMap[]>([])
 const uid = ref('')
@@ -87,7 +88,7 @@ onMounted(loadMaps)
             />
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <h2 class="text-lg font-semibold text-slate-900">{{ map.name || map.uid }}</h2>
+                <h2 class="text-lg font-semibold text-slate-900">{{ displayTrackmaniaMapName(map.name, map.uid) }}</h2>
                 <UiBadge variant="info">{{ map.map_style || 'style n/a' }}</UiBadge>
                 <UiBadge>{{ map.map_type || 'type n/a' }}</UiBadge>
               </div>

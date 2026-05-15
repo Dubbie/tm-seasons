@@ -45,8 +45,9 @@ export type ApiSeason = {
   description: string | null
   starts_at: string | null
   ends_at: string | null
-  is_active: boolean
-  status: string
+  status: 'draft' | 'scheduled' | 'active' | 'ended' | 'finalized'
+  finalized_at: string | null
+  finalized_by_user_id: number | null
   created_by_user_id: number | null
   maps?: ApiMap[]
   created_at: string | null
@@ -196,6 +197,28 @@ export async function updateAdminSeason(id: number, payload: Partial<ApiSeason>)
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+  return response.data
+}
+
+export async function finalizeAdminSeason(id: number): Promise<{
+  rewards_granted: { player_id: number; position: number; type: string; points: number }[]
+  players_processed: number
+  final_standings: { player_id: number; current_position: number; time_ms: number }[]
+}> {
+  const response = await request<ApiResource<{
+    rewards_granted: { player_id: number; position: number; type: string; points: number }[]
+    players_processed: number
+    final_standings: { player_id: number; current_position: number; time_ms: number }[]
+  }>>(`/api/admin/seasons/${id}/finalize`, { method: 'POST' })
+
+  return response.data
+}
+
+export async function updateAdminSeasonStatuses(): Promise<{ activated: number[]; ended: number[] }> {
+  const response = await request<ApiResource<{ activated: number[]; ended: number[] }>>('/api/admin/seasons/update-statuses', {
+    method: 'POST',
+  })
+
   return response.data
 }
 

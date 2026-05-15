@@ -6,6 +6,7 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { displayTrackmaniaMapName } from '@/lib/trackmaniaText'
 import {
   adminPolls,
   adminSeason,
@@ -113,7 +114,7 @@ onMounted(loadData)
         </div>
 
         <div class="mt-4 flex items-center gap-3">
-          <UiButton :disabled="polling" @click="triggerPoll">
+          <UiButton :disabled="polling || season?.status !== 'active'" @click="triggerPoll">
             {{ polling ? 'Polling...' : 'Trigger Poll' }}
           </UiButton>
           <span v-if="polling" class="text-sm text-slate-500">Fetching leaderboard data...</span>
@@ -169,7 +170,7 @@ onMounted(loadData)
             @update:model-value="handleMapFilter"
           >
             <option value="">All maps</option>
-            <option v-for="map in maps" :key="map.id" :value="String(map.id)">{{ map.name || map.uid }}</option>
+            <option v-for="map in maps" :key="map.id" :value="String(map.id)">{{ displayTrackmaniaMapName(map.name, map.uid) }}</option>
           </UiSelect>
           <p v-if="loading" class="text-sm text-slate-500">Loading...</p>
         </div>
@@ -189,7 +190,7 @@ onMounted(loadData)
               <tr v-for="(record, index) in records" :key="record.id" class="border-b last:border-b-0">
                 <td class="py-2 pr-3 text-slate-700">{{ index + 1 }}</td>
                 <td class="py-2 pr-3 font-medium text-slate-900">{{ record.player?.display_name ?? 'Unknown' }}</td>
-                <td class="py-2 pr-3 text-slate-700">{{ record.map?.name ?? '-' }}</td>
+                <td class="py-2 pr-3 text-slate-700">{{ record.map ? displayTrackmaniaMapName(record.map.name, record.map.uid) : '-' }}</td>
                 <td class="py-2 pr-3 text-slate-700">{{ formatScore(record.time_ms) }}</td>
                 <td class="py-2 text-slate-700">{{ record.last_improved_at ? new Date(record.last_improved_at).toLocaleString() : '-' }}</td>
               </tr>

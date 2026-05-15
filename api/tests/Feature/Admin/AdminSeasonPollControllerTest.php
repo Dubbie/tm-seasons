@@ -24,7 +24,7 @@ class AdminSeasonPollControllerTest extends TestCase
         parent::setUp();
 
         $this->admin = User::factory()->create(['is_admin' => true]);
-        $this->season = Season::query()->create(['name' => 'Test Season', 'is_active' => true]);
+        $this->season = Season::query()->create(['name' => 'Test Season', 'status' => 'active']);
     }
 
     public function test_poll_endpoint_triggers_polling(): void
@@ -53,6 +53,15 @@ class AdminSeasonPollControllerTest extends TestCase
         $this->actingAs($nonAdmin)
             ->postJson("/api/admin/seasons/{$this->season->id}/poll")
             ->assertForbidden();
+    }
+
+    public function test_poll_endpoint_rejects_non_active_season(): void
+    {
+        $this->season->update(['status' => 'ended']);
+
+        $this->actingAs($this->admin)
+            ->postJson("/api/admin/seasons/{$this->season->id}/poll")
+            ->assertStatus(422);
     }
 
     public function test_records_endpoint_returns_paginated_records(): void

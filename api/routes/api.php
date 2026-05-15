@@ -51,6 +51,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
         Route::get('/seasons/{season}', [AdminSeasonController::class, 'show'])->name('show');
         Route::post('/seasons', [AdminSeasonController::class, 'store'])->name('store');
         Route::patch('/seasons/{season}', [AdminSeasonController::class, 'update'])->name('update');
+        Route::post('/seasons/{season}/finalize', [AdminSeasonController::class, 'finalize'])->name('finalize');
+        Route::post('/seasons/update-statuses', [AdminSeasonController::class, 'updateStatuses'])->name('updateStatuses');
         Route::delete('/seasons/{season}', [AdminSeasonController::class, 'destroy'])->name('destroy');
     });
 

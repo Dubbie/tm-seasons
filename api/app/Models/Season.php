@@ -21,6 +21,9 @@ class Season extends Model
         'starts_at',
         'ends_at',
         'is_active',
+        'status',
+        'finalized_at',
+        'finalized_by_user_id',
         'created_by_user_id',
     ];
 
@@ -29,7 +32,8 @@ class Season extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
-            'is_active' => 'boolean',
+            'status' => SeasonStatus::class,
+            'finalized_at' => 'datetime',
         ];
     }
 
@@ -55,14 +59,21 @@ class Season extends Model
             $season->slug = $slug;
         });
 
-        static::saving(function (self $season): void {
-            if ($season->is_active) {
-                static::query()
-                    ->whereKeyNot($season->getKey())
-                    ->where('is_active', true)
-                    ->update(['is_active' => false]);
-            }
-        });
+    }
+
+    public function canPoll(): bool
+    {
+        return $this->status === SeasonStatus::Active;
+    }
+
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->status === SeasonStatus::Active;
+    }
+
+    public function setIsActiveAttribute(bool $value): void
+    {
+        $this->attributes['status'] = $value ? SeasonStatus::Active->value : SeasonStatus::Draft->value;
     }
 
     public function maps(): BelongsToMany
