@@ -24,6 +24,12 @@ async function handleLogout(): Promise<void> {
   <main class="dashboard-layout">
     <section class="card">
       <h1>Dashboard</h1>
+      <nav class="quick-nav">
+        <RouterLink to="/seasons">Public Seasons</RouterLink>
+        <RouterLink v-if="auth.isAdmin.value" to="/admin">Admin Home</RouterLink>
+        <RouterLink v-if="auth.isAdmin.value" to="/admin/maps">Admin Maps</RouterLink>
+        <RouterLink v-if="auth.isAdmin.value" to="/admin/seasons">Admin Seasons</RouterLink>
+      </nav>
       <p><strong>User:</strong> {{ displayName }}</p>
       <p><strong>Discord ID:</strong> {{ auth.user.value?.discord_id ?? 'n/a' }}</p>
       <p><strong>Email:</strong> {{ auth.user.value?.email ?? 'n/a' }}</p>
@@ -47,6 +53,27 @@ async function handleLogout(): Promise<void> {
   background: #ffffff;
   border-radius: 14px;
   border: 1px solid #d8e5f2;
+}
+
+.quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.quick-nav a {
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #d8e5f2;
+  background: #f7fbff;
+  color: #1c3f76;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.quick-nav a:hover {
+  background: #edf5ff;
 }
 
 .logout-btn {
