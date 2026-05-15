@@ -13,8 +13,7 @@ class TrackmaniaClubSyncService
     public function __construct(
         private readonly TrackmaniaClient $trackmaniaClient,
         private readonly TrackmaniaIoClient $trackmaniaIoClient,
-    ) {
-    }
+    ) {}
 
     public function syncClub(int|string $clubId): array
     {

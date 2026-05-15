@@ -11,8 +11,7 @@ final readonly class TrackmaniaLeaderboardEntry
         public ?int $timestamp,
         public ?string $zoneId,
         public ?string $zoneName,
-    ) {
-    }
+    ) {}
 
     public static function fromApiResponse(array $payload): self
     {

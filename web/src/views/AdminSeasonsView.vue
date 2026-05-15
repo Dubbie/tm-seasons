@@ -93,6 +93,9 @@ onMounted(loadSeasons)
             <RouterLink :to="`/admin/seasons/${season.id}`" custom v-slot="{ navigate }">
               <UiButton variant="secondary" size="sm" @click="navigate">Edit Maps</UiButton>
             </RouterLink>
+            <RouterLink :to="`/admin/seasons/${season.id}/leaderboard`" custom v-slot="{ navigate }">
+              <UiButton variant="secondary" size="sm" @click="navigate">Leaderboard</UiButton>
+            </RouterLink>
             <UiButton variant="danger" size="sm" @click="handleDelete(season.id)">Delete</UiButton>
           </div>
         </UiCard>

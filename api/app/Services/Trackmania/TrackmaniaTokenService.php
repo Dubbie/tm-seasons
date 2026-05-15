@@ -10,12 +10,19 @@ use Illuminate\Support\Facades\Http;
 class TrackmaniaTokenService
 {
     private const TOKEN_CACHE_KEY_DEFAULT = 'trackmania.token';
+
     private const TOKEN_CACHE_TTL_FALLBACK_DEFAULT = 900;
+
     private const TOKEN_EXPIRY_SKEW_SECONDS_DEFAULT = 60;
+
     private const RETRY_TIMES_DEFAULT = 3;
+
     private const RETRY_SLEEP_MS_DEFAULT = 200;
+
     private const TIMEOUT_SECONDS_DEFAULT = 10;
+
     private const AUDIENCE_DEFAULT = 'NadeoLiveServices';
+
     private const USER_AGENT_DEFAULT = 'tm-bot/1.0 (+https://example.com)';
 
     public function getToken(?string $audience = null): string

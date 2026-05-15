@@ -338,6 +338,86 @@ export async function publicClubMembers(clubId: number, active: '1' | '0' = '1')
   return payload.data
 }
 
+export type ApiSeasonMapPlayerRecord = {
+  id: number
+  season_id: number
+  map_id: number
+  map?: ApiMap
+  trackmania_player_id: number
+  player?: ApiTrackmaniaPlayer
+  global_position: number | null
+  time_ms: number | null
+  first_seen_at: string | null
+  last_seen_at: string | null
+  last_improved_at: string | null
+}
+
+export type ApiLeaderboardPoll = {
+  id: number
+  season_id: number | null
+  season?: ApiSeason | null
+  status: string
+  started_at: string | null
+  finished_at: string | null
+  maps_polled_count: number
+  players_processed_count: number
+  snapshot_count?: number
+  error_message: string | null
+}
+
+export type ApiSeasonLeaderboardEntry = {
+  id: number
+  player: ApiTrackmaniaPlayer | null
+  global_position: number | null
+  time_ms: number | null
+}
+
+export type ApiPollResult = {
+  message: string
+  total_maps: number
+  maps_processed: number
+  snapshots_created: number
+  improvements_detected: number
+}
+
+export async function pollSeason(seasonId: number): Promise<ApiPollResult> {
+  return request<ApiPollResult>(`/api/admin/seasons/${seasonId}/poll`, { method: 'POST' })
+}
+
+export async function adminSeasonRecords(
+  seasonId: number,
+  params: { map_id?: number; player_id?: number; sort?: string; direction?: string; page?: number } = {},
+): Promise<ApiSeasonMapPlayerRecord[]> {
+  const query = new URLSearchParams()
+  if (params.map_id) query.set('map_id', String(params.map_id))
+  if (params.player_id) query.set('player_id', String(params.player_id))
+  if (params.sort) query.set('sort', params.sort)
+  if (params.direction) query.set('direction', params.direction)
+  if (params.page) query.set('page', String(params.page))
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  const payload = await request<ApiPaginatedCollection<ApiSeasonMapPlayerRecord>>(`/api/admin/seasons/${seasonId}/records${suffix}`)
+  return payload.data
+}
+
+export async function adminPolls(): Promise<ApiLeaderboardPoll[]> {
+  const payload = await request<ApiPaginatedCollection<ApiLeaderboardPoll>>('/api/admin/polls')
+  return payload.data
+}
+
+export async function adminPoll(id: number): Promise<ApiLeaderboardPoll> {
+  const payload = await request<ApiResource<ApiLeaderboardPoll>>(`/api/admin/polls/${id}`)
+  return payload.data
+}
+
+export async function publicSeasonLeaderboard(slug: string): Promise<{
+  season: ApiSeason
+  leaderboard: { map: { id: number; name: string | null; uid: string }; entries: ApiSeasonLeaderboardEntry[] }[]
+}> {
+  const payload = await request<ApiResource<{ season: ApiSeason; leaderboard: { map: { id: number; name: string | null; uid: string }; entries: ApiSeasonLeaderboardEntry[] }[] }>>(`/api/seasons/${slug}/leaderboard`, {}, false)
+  return payload.data
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},

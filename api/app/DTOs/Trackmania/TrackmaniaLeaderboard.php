@@ -11,8 +11,7 @@ final readonly class TrackmaniaLeaderboard
         public string $groupUid,
         public string $mapUid,
         public array $entries,
-    ) {
-    }
+    ) {}
 
     public static function fromApiResponse(string $mapUid, string $groupUid, array $payload): self
     {

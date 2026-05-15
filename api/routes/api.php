@@ -1,48 +1,79 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminMapController;
 use App\Http\Controllers\Admin\AdminClubController;
 use App\Http\Controllers\Admin\AdminClubMemberController;
+use App\Http\Controllers\Admin\AdminLeaderboardPollController;
+use App\Http\Controllers\Admin\AdminMapController;
 use App\Http\Controllers\Admin\AdminSeasonController;
 use App\Http\Controllers\Admin\AdminSeasonMapController;
+use App\Http\Controllers\Admin\AdminSeasonPollController;
 use App\Http\Controllers\Auth\DiscordAuthController;
 use App\Http\Controllers\Public\PublicClubController;
 use App\Http\Controllers\Public\PublicMapController;
 use App\Http\Controllers\Public\PublicSeasonController;
+use App\Http\Controllers\Public\PublicSeasonLeaderboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/me', [DiscordAuthController::class, 'me'])->middleware('auth:sanctum');
+Route::get('/me', [DiscordAuthController::class, 'me'])->middleware('auth:sanctum')->name('me');
 
-Route::get('/seasons', [PublicSeasonController::class, 'index']);
-Route::get('/seasons/{slug}', [PublicSeasonController::class, 'show']);
-Route::get('/maps/{uid}', [PublicMapController::class, 'show']);
-Route::get('/clubs', [PublicClubController::class, 'index']);
-Route::get('/clubs/{club}', [PublicClubController::class, 'show']);
-Route::get('/clubs/{club}/members', [PublicClubController::class, 'members']);
+Route::name('seasons.')->group(function (): void {
+    Route::get('/seasons', [PublicSeasonController::class, 'index'])->name('index');
+    Route::get('/seasons/{slug}', [PublicSeasonController::class, 'show'])->name('show');
+    Route::get('/seasons/{slug}/leaderboard', [PublicSeasonLeaderboardController::class, 'seasonLeaderboard'])->name('leaderboard');
+    Route::get('/seasons/{slug}/maps/{map}/leaderboard', [PublicSeasonLeaderboardController::class, 'mapLeaderboard'])->name('maps.leaderboard');
+});
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function (): void {
-    Route::get('/maps', [AdminMapController::class, 'index']);
-    Route::get('/maps/{map}', [AdminMapController::class, 'show']);
-    Route::post('/maps/import', [AdminMapController::class, 'import']);
-    Route::patch('/maps/{map}', [AdminMapController::class, 'update']);
-    Route::delete('/maps/{map}', [AdminMapController::class, 'destroy']);
+Route::get('/maps/{uid}', [PublicMapController::class, 'show'])->name('maps.show');
 
-    Route::get('/seasons', [AdminSeasonController::class, 'index']);
-    Route::get('/seasons/{season}', [AdminSeasonController::class, 'show']);
-    Route::post('/seasons', [AdminSeasonController::class, 'store']);
-    Route::patch('/seasons/{season}', [AdminSeasonController::class, 'update']);
-    Route::delete('/seasons/{season}', [AdminSeasonController::class, 'destroy']);
+Route::name('clubs.')->group(function (): void {
+    Route::get('/clubs', [PublicClubController::class, 'index'])->name('index');
+    Route::get('/clubs/{club}', [PublicClubController::class, 'show'])->name('show');
+    Route::get('/clubs/{club}/members', [PublicClubController::class, 'members'])->name('members');
+});
 
-    Route::post('/seasons/{season}/maps', [AdminSeasonMapController::class, 'store']);
-    Route::patch('/seasons/{season}/maps/{map}', [AdminSeasonMapController::class, 'update']);
-    Route::delete('/seasons/{season}/maps/{map}', [AdminSeasonMapController::class, 'destroy']);
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::name('maps.')->group(function (): void {
+        Route::get('/maps', [AdminMapController::class, 'index'])->name('index');
+        Route::get('/maps/{map}', [AdminMapController::class, 'show'])->name('show');
+        Route::post('/maps/import', [AdminMapController::class, 'import'])->name('import');
+        Route::patch('/maps/{map}', [AdminMapController::class, 'update'])->name('update');
+        Route::delete('/maps/{map}', [AdminMapController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/clubs', [AdminClubController::class, 'index']);
-    Route::get('/clubs/{club}', [AdminClubController::class, 'show']);
-    Route::post('/clubs/sync', [AdminClubController::class, 'sync']);
-    Route::get('/clubs/{club}/members', [AdminClubMemberController::class, 'index']);
+    Route::name('seasons.')->group(function (): void {
+        Route::get('/seasons', [AdminSeasonController::class, 'index'])->name('index');
+        Route::get('/seasons/{season}', [AdminSeasonController::class, 'show'])->name('show');
+        Route::post('/seasons', [AdminSeasonController::class, 'store'])->name('store');
+        Route::patch('/seasons/{season}', [AdminSeasonController::class, 'update'])->name('update');
+        Route::delete('/seasons/{season}', [AdminSeasonController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/club', [AdminClubController::class, 'primary']);
-    Route::post('/club/sync', [AdminClubController::class, 'syncPrimary']);
-    Route::get('/club/members', [AdminClubMemberController::class, 'primary']);
+    Route::name('seasons.maps.')->group(function (): void {
+        Route::post('/seasons/{season}/maps', [AdminSeasonMapController::class, 'store'])->name('store');
+        Route::patch('/seasons/{season}/maps/{map}', [AdminSeasonMapController::class, 'update'])->name('update');
+        Route::delete('/seasons/{season}/maps/{map}', [AdminSeasonMapController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::name('seasons.')->group(function (): void {
+        Route::post('/seasons/{season}/poll', [AdminSeasonPollController::class, 'poll'])->name('poll');
+        Route::get('/seasons/{season}/records', [AdminSeasonPollController::class, 'records'])->name('records');
+    });
+
+    Route::name('clubs.')->group(function (): void {
+        Route::get('/clubs', [AdminClubController::class, 'index'])->name('index');
+        Route::get('/clubs/{club}', [AdminClubController::class, 'show'])->name('show');
+        Route::post('/clubs/sync', [AdminClubController::class, 'sync'])->name('sync');
+        Route::get('/clubs/{club}/members', [AdminClubMemberController::class, 'index'])->name('members.index');
+    });
+
+    Route::name('club.')->group(function (): void {
+        Route::get('/club', [AdminClubController::class, 'primary'])->name('primary');
+        Route::post('/club/sync', [AdminClubController::class, 'syncPrimary'])->name('syncPrimary');
+        Route::get('/club/members', [AdminClubMemberController::class, 'primary'])->name('members');
+    });
+
+    Route::name('polls.')->group(function (): void {
+        Route::get('/polls', [AdminLeaderboardPollController::class, 'index'])->name('index');
+        Route::get('/polls/{poll}', [AdminLeaderboardPollController::class, 'show'])->name('show');
+    });
 });

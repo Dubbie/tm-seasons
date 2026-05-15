@@ -3,7 +3,6 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\ClubMember;
-use App\Models\TrackmaniaClub;
 use App\Models\TrackmaniaPlayer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -11,8 +11,7 @@ class MapImportService
 {
     public function __construct(
         private readonly TrackmaniaClient $trackmaniaClient,
-    ) {
-    }
+    ) {}
 
     /**
      * @throws TrackmaniaClientException

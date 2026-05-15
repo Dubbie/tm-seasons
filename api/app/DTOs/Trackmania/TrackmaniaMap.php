@@ -20,8 +20,7 @@ final readonly class TrackmaniaMap
         public ?string $collectionName,
         public ?int $uploadTimestamp,
         public ?int $updateTimestamp,
-    ) {
-    }
+    ) {}
 
     public static function fromApiResponse(string $requestedMapUid, array $payload): self
     {

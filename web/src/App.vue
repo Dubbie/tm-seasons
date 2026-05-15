@@ -9,10 +9,12 @@ const auth = useAuth()
 const router = useRouter()
 
 const displayName = computed(() => {
-  return auth.user.value?.discord_global_name
-    || auth.user.value?.discord_username
-    || auth.user.value?.name
-    || 'Account'
+  return (
+    auth.user.value?.discord_global_name ||
+    auth.user.value?.discord_username ||
+    auth.user.value?.name ||
+    'Account'
+  )
 })
 
 async function handleLogout(): Promise<void> {
@@ -26,13 +28,35 @@ async function handleLogout(): Promise<void> {
     <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <div class="flex items-center gap-6">
-          <RouterLink to="/seasons" class="text-base font-semibold text-slate-900">TM Club Seasons</RouterLink>
+          <RouterLink to="/seasons" class="text-base font-semibold text-slate-900">FAM</RouterLink>
           <nav class="flex items-center gap-3 text-sm">
-            <RouterLink to="/seasons" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Seasons</RouterLink>
-            <RouterLink v-if="auth.isAuthenticated.value" to="/dashboard" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Dashboard</RouterLink>
-            <RouterLink v-if="auth.isAdmin.value" to="/admin/seasons" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Admin Seasons</RouterLink>
-            <RouterLink v-if="auth.isAdmin.value" to="/admin/maps" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Admin Maps</RouterLink>
-            <RouterLink v-if="auth.isAdmin.value" to="/admin/clubs" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100">Admin Clubs</RouterLink>
+            <RouterLink to="/seasons" class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
+              >Seasons</RouterLink
+            >
+            <RouterLink
+              v-if="auth.isAuthenticated.value"
+              to="/dashboard"
+              class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
+              >Dashboard</RouterLink
+            >
+            <RouterLink
+              v-if="auth.isAdmin.value"
+              to="/admin/seasons"
+              class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
+              >Admin Seasons</RouterLink
+            >
+            <RouterLink
+              v-if="auth.isAdmin.value"
+              to="/admin/maps"
+              class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
+              >Admin Maps</RouterLink
+            >
+            <RouterLink
+              v-if="auth.isAdmin.value"
+              to="/admin/clubs"
+              class="rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
+              >Admin Clubs</RouterLink
+            >
           </nav>
         </div>
 

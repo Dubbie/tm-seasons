@@ -20,6 +20,7 @@ class TrackmaniaClientTest extends TestCase
         config()->set('trackmania.base_url', 'https://live-services.trackmania.nadeo.live');
         config()->set('trackmania.dedicated_login', 'test-login');
         config()->set('trackmania.dedicated_password', 'test-password');
+        config()->set('cache.default', 'array');
         Cache::flush();
     }
 

@@ -6,23 +6,27 @@ use App\DTOs\Trackmania\TrackmaniaLeaderboard;
 use App\DTOs\Trackmania\TrackmaniaMap;
 use App\Exceptions\Trackmania\TrackmaniaClientException;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 class TrackmaniaClient
 {
     private const BASE_URL_DEFAULT = 'https://live-services.trackmania.nadeo.live';
+
     private const AUDIENCE_DEFAULT = 'NadeoLiveServices';
+
     private const RETRY_TIMES_DEFAULT = 3;
+
     private const RETRY_SLEEP_MS_DEFAULT = 200;
+
     private const TIMEOUT_SECONDS_DEFAULT = 10;
+
     private const USER_AGENT_DEFAULT = 'tm-bot/1.0 (+https://example.com)';
 
     public function __construct(
         private readonly TrackmaniaTokenService $tokenService,
-    ) {
-    }
+    ) {}
 
     public function getMapInfo(string $mapUid): TrackmaniaMap
     {

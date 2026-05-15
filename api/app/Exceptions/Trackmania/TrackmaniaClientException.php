@@ -4,6 +4,4 @@ namespace App\Exceptions\Trackmania;
 
 use RuntimeException;
 
-class TrackmaniaClientException extends RuntimeException
-{
-}
+class TrackmaniaClientException extends RuntimeException {}

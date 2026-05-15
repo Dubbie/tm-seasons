@@ -2,10 +2,13 @@
 
 use App\Exceptions\Trackmania\TrackmaniaClientException;
 use App\Exceptions\Trackmania\TrackmaniaTokenException;
+use App\Models\Season;
 use App\Models\User;
+use App\Services\Trackmania\SeasonLeaderboardPollingService;
 use App\Services\Trackmania\TrackmaniaClient;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -21,7 +24,7 @@ Artisan::command('trackmania:test-map {mapUid}', function (string $mapUid): int 
         $this->error($exception->getMessage());
 
         return self::FAILURE;
-    } catch (\Throwable $exception) {
+    } catch (Throwable $exception) {
         $this->error('Unexpected Trackmania error: '.$exception->getMessage());
 
         return self::FAILURE;
@@ -42,6 +45,58 @@ Artisan::command('trackmania:test-map {mapUid}', function (string $mapUid): int 
 
     return self::SUCCESS;
 })->purpose('Test Trackmania map and leaderboard API access');
+
+Artisan::command('season:poll {seasonId}', function (string $seasonId): int {
+    $season = Season::query()->find($seasonId);
+
+    if (! $season) {
+        $this->error(sprintf('Season [%s] not found.', $seasonId));
+
+        return self::FAILURE;
+    }
+
+    try {
+        /** @var SeasonLeaderboardPollingService $pollingService */
+        $pollingService = app(SeasonLeaderboardPollingService::class);
+        $result = $pollingService->pollSeason($season);
+    } catch (Throwable $exception) {
+        $this->error(sprintf('Poll failed: %s', $exception->getMessage()));
+
+        return self::FAILURE;
+    }
+
+    $this->info('Season poll completed.');
+    $this->line(sprintf('Maps processed: %d / %d', $result['maps_processed'], $result['total_maps']));
+    $this->line(sprintf('Snapshots created: %d', $result['snapshots_created']));
+    $this->line(sprintf('Improvements detected: %d', $result['improvements_detected']));
+
+    if ($result['map_errors'] !== []) {
+        $this->warn(sprintf('Map errors: %d', count($result['map_errors'])));
+
+        foreach ($result['map_errors'] as $error) {
+            $this->line(sprintf('  - %s', $error));
+        }
+    }
+
+    return self::SUCCESS;
+})->purpose('Poll leaderboard data for a season by ID');
+
+Artisan::command('season:poll-active', function (): int {
+    $season = Season::query()->where('is_active', true)->first();
+
+    if (! $season) {
+        $this->warn('No active season found.');
+
+        return self::SUCCESS;
+    }
+
+    $this->info(sprintf('Polling active season [%s] (%s)...', $season->name, $season->slug));
+
+    return $this->call('season:poll', ['seasonId' => (string) $season->id]);
+})->purpose('Poll leaderboard data for the currently active season');
+
+// Schedule: poll active season every 5 minutes
+// Schedule::command('season:poll-active')->everyFiveMinutes();
 
 Artisan::command('users:make-admin {discord_id}', function (string $discord_id): int {
     $user = User::query()->where('discord_id', $discord_id)->first();

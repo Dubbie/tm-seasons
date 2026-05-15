@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,7 +52,7 @@ class DiscordAuthController extends Controller
         }
     }
 
-    public function logout(Request $request): \Illuminate\Http\JsonResponse
+    public function logout(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
 
@@ -61,7 +62,7 @@ class DiscordAuthController extends Controller
         return response()->json(['message' => 'Logged out']);
     }
 
-    public function me(Request $request): \Illuminate\Http\JsonResponse
+    public function me(Request $request): JsonResponse
     {
         $user = $request->user();
 
