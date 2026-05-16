@@ -2,15 +2,26 @@
 
 namespace App\Domains\Trackmania\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Trackmania\Http\Resources\ClubMemberResource;
 use App\Domains\Trackmania\Models\ClubMember;
 use App\Domains\Trackmania\Models\TrackmaniaClub;
+use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+#[Group('Trackmania - Admin', description: 'Admin-only Trackmania club synchronization and management endpoints.', weight: 30)]
 class AdminClubMemberController extends Controller
 {
-    public function primary(Request $request)
+    /**
+     * List primary club members for admins.
+     *
+     * Returns paginated members for the primary club, with optional search, active, and sort filters.
+     *
+     * @response AnonymousResourceCollection<ClubMemberResource>
+     */
+    public function primary(Request $request): AnonymousResourceCollection|JsonResponse
     {
         $club = TrackmaniaClub::primary();
 
@@ -32,7 +43,14 @@ class AdminClubMemberController extends Controller
         return $this->index($request, $club);
     }
 
-    public function index(Request $request, TrackmaniaClub $club)
+    /**
+     * List club members for admins.
+     *
+     * Returns paginated members for a selected club, with optional search, active, and sort filters.
+     *
+     * @response AnonymousResourceCollection<ClubMemberResource>
+     */
+    public function index(Request $request, TrackmaniaClub $club): AnonymousResourceCollection
     {
         $query = ClubMember::query()
             ->where('club_members.trackmania_club_id', $club->id)

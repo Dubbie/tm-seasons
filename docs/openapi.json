@@ -1,0 +1,3143 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "TM Seasons API Docs",
+        "version": "1.0.0",
+        "description": "REST API for TM Seasons, covering Discord authentication, Trackmania club and map administration, season lifecycle management, leaderboard polling, event-based scoring, standings, and activity feeds."
+    },
+    "servers": [
+        {
+            "url": "https://tm-bot.test/api",
+            "description": "Local"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Identity",
+            "description": "Current-user profile and Discord authentication endpoints."
+        },
+        {
+            "name": "Trackmania - Public",
+            "description": "Public Trackmania club, member, and map endpoints."
+        },
+        {
+            "name": "Trackmania - Admin",
+            "description": "Admin-only Trackmania club synchronization and management endpoints."
+        },
+        {
+            "name": "Seasons - Public",
+            "description": "Public season discovery, leaderboards, standings, and activity endpoints."
+        },
+        {
+            "name": "Seasons - Admin",
+            "description": "Admin-only season lifecycle, map assignment, polling, scoring, and finalization endpoints."
+        }
+    ],
+    "security": [
+        {
+            "sanctum": []
+        }
+    ],
+    "paths": {
+        "/me": {
+            "get": {
+                "operationId": "me",
+                "description": "Returns the signed-in user's profile, Discord identity fields, admin flag, and last login timestamp.",
+                "summary": "Get the current authenticated user",
+                "tags": [
+                    "Identity"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "email": {
+                                            "type": "string"
+                                        },
+                                        "discord_id": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "discord_username": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "discord_global_name": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "discord_avatar": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "is_admin": {
+                                            "type": "boolean"
+                                        },
+                                        "last_login_at": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "email",
+                                        "discord_id",
+                                        "discord_username",
+                                        "discord_global_name",
+                                        "discord_avatar",
+                                        "is_admin",
+                                        "last_login_at"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/maps/{uid}": {
+            "get": {
+                "operationId": "maps.show",
+                "description": "Returns imported map metadata for the requested Trackmania map UID.",
+                "summary": "Get a Trackmania map by UID",
+                "tags": [
+                    "Trackmania - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MapResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MapResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/clubs": {
+            "get": {
+                "operationId": "clubs.index",
+                "description": "Returns paginated clubs ordered by most recently imported first.",
+                "summary": "List public Trackmania clubs",
+                "tags": [
+                    "Trackmania - Public"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `TrackmaniaClubResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/clubs/{club}": {
+            "get": {
+                "operationId": "clubs.show",
+                "description": "Returns the selected club and its public metadata.",
+                "summary": "Get a public Trackmania club",
+                "tags": [
+                    "Trackmania - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "club",
+                        "in": "path",
+                        "required": true,
+                        "description": "The club ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TrackmaniaClubResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/clubs/{club}/members": {
+            "get": {
+                "operationId": "clubs.members",
+                "description": "Returns paginated members for a club, optionally filtered by active membership.",
+                "summary": "List public club members",
+                "tags": [
+                    "Trackmania - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "club",
+                        "in": "path",
+                        "required": true,
+                        "description": "The club ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "active",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ClubMemberResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ClubMemberResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/admin/maps": {
+            "get": {
+                "operationId": "admin.maps.index",
+                "description": "Returns paginated imported maps ordered by most recently imported first.",
+                "summary": "List maps for admins",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `MapResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/MapResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/maps/{map}": {
+            "get": {
+                "operationId": "admin.maps.show",
+                "description": "Returns the selected imported map and admin-visible metadata.",
+                "summary": "Get a map for admins",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "map",
+                        "in": "path",
+                        "required": true,
+                        "description": "The map ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MapResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MapResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "admin.maps.update",
+                "description": "Updates editable fields for an imported Trackmania map.",
+                "summary": "Update map metadata",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "map",
+                        "in": "path",
+                        "required": true,
+                        "description": "The map ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMapRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`MapResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MapResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "admin.maps.destroy",
+                "description": "Removes an imported map from the local database.",
+                "summary": "Delete a map",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "map",
+                        "in": "path",
+                        "required": true,
+                        "description": "The map ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/maps/import": {
+            "post": {
+                "operationId": "admin.maps.import",
+                "description": "Fetches map metadata from Trackmania services by UID and stores or updates the local map.",
+                "summary": "Import a Trackmania map",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportMapRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`MapResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/MapResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Trackmania API failure while importing map."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/admin/clubs": {
+            "get": {
+                "operationId": "admin.clubs.index",
+                "description": "Returns paginated clubs ordered by most recently imported first.",
+                "summary": "List admin Trackmania clubs",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `TrackmaniaClubResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/clubs/{club}": {
+            "get": {
+                "operationId": "admin.clubs.show",
+                "description": "Returns the selected club and admin-visible metadata.",
+                "summary": "Get an admin Trackmania club",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "club",
+                        "in": "path",
+                        "required": true,
+                        "description": "The club ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TrackmaniaClubResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/clubs/sync": {
+            "post": {
+                "operationId": "admin.clubs.sync",
+                "description": "Imports or updates club members from Trackmania services for the provided club ID.",
+                "summary": "Sync a Trackmania club",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SyncClubRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "club": {
+                                            "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                        },
+                                        "imported": {},
+                                        "updated": {},
+                                        "deactivated": {},
+                                        "enriched": {
+                                            "anyOf": [
+                                                {},
+                                                {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "total_members": {}
+                                    },
+                                    "required": [
+                                        "club",
+                                        "imported",
+                                        "updated",
+                                        "deactivated",
+                                        "enriched",
+                                        "total_members"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unexpected failure while syncing club."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/clubs/{club}/members": {
+            "get": {
+                "operationId": "admin.clubs.members.index",
+                "description": "Returns paginated members for a selected club, with optional search, active, and sort filters.",
+                "summary": "List club members for admins",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "club",
+                        "in": "path",
+                        "required": true,
+                        "description": "The club ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "active",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ClubMemberResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ClubMemberResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/club": {
+            "get": {
+                "operationId": "admin.club.primary",
+                "description": "Returns the configured primary club, falling back to the oldest imported club when needed.",
+                "summary": "Get the primary club",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TrackmaniaClubResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No primary club configured yet."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/club/sync": {
+            "post": {
+                "operationId": "admin.club.syncPrimary",
+                "description": "Uses the supplied club ID when present, otherwise syncs the configured primary club.",
+                "summary": "Sync the primary Trackmania club",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SyncClubRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "club": {
+                                            "$ref": "#/components/schemas/TrackmaniaClubResource"
+                                        },
+                                        "imported": {},
+                                        "updated": {},
+                                        "deactivated": {},
+                                        "enriched": {
+                                            "anyOf": [
+                                                {},
+                                                {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "total_members": {}
+                                    },
+                                    "required": [
+                                        "club",
+                                        "imported",
+                                        "updated",
+                                        "deactivated",
+                                        "enriched",
+                                        "total_members"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unexpected failure while syncing club."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No primary club configured yet."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/club/members": {
+            "get": {
+                "operationId": "admin.club.members",
+                "description": "Returns paginated members for the primary club, with optional search, active, and sort filters.",
+                "summary": "List primary club members for admins",
+                "tags": [
+                    "Trackmania - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ClubMemberResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ClubMemberResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/seasons": {
+            "get": {
+                "operationId": "seasons.index",
+                "description": "Returns scheduled, active, ended, and finalized seasons ordered by start date.",
+                "summary": "List public seasons",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SeasonResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/seasons/{slug}": {
+            "get": {
+                "operationId": "seasons.show",
+                "description": "Returns a visible season by slug with its maps ordered for season play.",
+                "summary": "Get a public season",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeasonResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/seasons/{slug}/leaderboard": {
+            "get": {
+                "operationId": "seasons.leaderboard",
+                "description": "Returns each active season map with ordered player records.",
+                "summary": "Get public season leaderboard",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "season": {
+                                                    "$ref": "#/components/schemas/SeasonResource"
+                                                },
+                                                "leaderboard": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "season",
+                                                "leaderboard"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/seasons/{slug}/maps/{map}/leaderboard": {
+            "get": {
+                "operationId": "seasons.maps.leaderboard",
+                "description": "Returns ordered player records for one map within a season.",
+                "summary": "Get public map leaderboard",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "map",
+                        "in": "path",
+                        "required": true,
+                        "description": "The map ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "map": {
+                                                    "$ref": "#/components/schemas/MapResource"
+                                                },
+                                                "entries": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/SeasonMapPlayerRecordResource"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "map",
+                                                "entries"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/seasons/{slug}/standings": {
+            "get": {
+                "operationId": "seasons.standings",
+                "description": "Returns calculated point standings for a season by slug.",
+                "summary": "Get public season standings",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "season_id": {
+                                                    "type": "integer"
+                                                },
+                                                "season_name": {
+                                                    "type": "string"
+                                                },
+                                                "standings": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "required": [
+                                                "season_id",
+                                                "season_name",
+                                                "standings"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/seasons/{slug}/events": {
+            "get": {
+                "operationId": "seasons.events",
+                "description": "Returns paginated point events for a season, optionally filtered by player.",
+                "summary": "List public season events",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `PointEventResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PointEventResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/seasons/{slug}/players/{player}": {
+            "get": {
+                "operationId": "seasons.player",
+                "description": "Returns one player's season standing and map milestones.",
+                "summary": "Get public player standings",
+                "tags": [
+                    "Seasons - Public"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "player",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Player not found in season."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/admin/seasons": {
+            "get": {
+                "operationId": "admin.seasons.index",
+                "description": "Returns paginated seasons with creator information.",
+                "summary": "List seasons for admins",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SeasonResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "admin.seasons.store",
+                "description": "Stores a new season and records the authenticated admin as creator.",
+                "summary": "Create a season",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreSeasonRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeasonResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}": {
+            "get": {
+                "operationId": "admin.seasons.show",
+                "description": "Returns a season with creator and ordered map assignments.",
+                "summary": "Get a season for admins",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeasonResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "admin.seasons.update",
+                "description": "Updates season settings and validates the requested lifecycle state.",
+                "summary": "Update a season",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSeasonRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeasonResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "admin.seasons.destroy",
+                "description": "Removes the selected season from the local database.",
+                "summary": "Delete a season",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/finalize": {
+            "post": {
+                "operationId": "admin.seasons.finalize",
+                "description": "Calculates final placement rewards and transitions an ended season to finalized.",
+                "summary": "Finalize a season",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/update-statuses": {
+            "post": {
+                "operationId": "admin.seasons.updateStatuses",
+                "description": "Applies scheduled lifecycle transitions based on the current time.",
+                "summary": "Update automatic season statuses",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "activated": {
+                                                    "type": "string"
+                                                },
+                                                "ended": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "activated",
+                                                "ended"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/maps": {
+            "post": {
+                "operationId": "admin.seasons.maps.store",
+                "description": "Adds an imported map to a season and returns the season with ordered maps.",
+                "summary": "Attach a map to a season",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachSeasonMapRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeasonResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/maps/{map}": {
+            "patch": {
+                "operationId": "admin.seasons.maps.update",
+                "description": "Changes ordering or active state for a map attached to a season.",
+                "summary": "Update a season map assignment",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "map",
+                        "in": "path",
+                        "required": true,
+                        "description": "The map ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSeasonMapRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`SeasonResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeasonResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "admin.seasons.maps.destroy",
+                "description": "Removes a map assignment from the selected season.",
+                "summary": "Detach a map from a season",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "map",
+                        "in": "path",
+                        "required": true,
+                        "description": "The map ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/poll": {
+            "post": {
+                "operationId": "admin.seasons.poll",
+                "description": "Fetches current leaderboard data for active season maps and persists snapshots and records.",
+                "summary": "Poll a season leaderboard",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Poll completed successfully."
+                                        },
+                                        "total_maps": {
+                                            "type": "string"
+                                        },
+                                        "maps_processed": {
+                                            "type": "string"
+                                        },
+                                        "snapshots_created": {
+                                            "type": "string"
+                                        },
+                                        "records_updated": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "total_maps",
+                                        "maps_processed",
+                                        "snapshots_created",
+                                        "records_updated"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Poll failed."
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "error"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Only active seasons can be polled."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/records": {
+            "get": {
+                "operationId": "admin.seasons.records",
+                "description": "Returns paginated player records for a season, optionally filtered by map or player.",
+                "summary": "List season map records",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "map_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "player_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 0
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `SeasonMapPlayerRecordResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SeasonMapPlayerRecordResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/points": {
+            "get": {
+                "operationId": "admin.seasons.points",
+                "description": "Returns calculated standings and total point event count for a season.",
+                "summary": "Get admin season points",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "season_id": {
+                                                    "type": "integer"
+                                                },
+                                                "standings": {
+                                                    "type": "object"
+                                                },
+                                                "total_events": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "season_id",
+                                                "standings",
+                                                "total_events"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/events": {
+            "get": {
+                "operationId": "admin.seasons.events",
+                "description": "Returns paginated point events with optional player, map, and type filters.",
+                "summary": "List admin season events",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `PointEventResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PointEventResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/seasons/{season}/recalculate": {
+            "post": {
+                "operationId": "admin.seasons.recalculate",
+                "description": "Rebuilds point events for a season and returns the updated event count.",
+                "summary": "Recalculate season points",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "season",
+                        "in": "path",
+                        "required": true,
+                        "description": "The season ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Recalculation complete."
+                                        },
+                                        "events_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "events_count"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/polls": {
+            "get": {
+                "operationId": "admin.polls.index",
+                "description": "Returns paginated poll runs with their seasons.",
+                "summary": "List leaderboard polls",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `LeaderboardPollResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LeaderboardPollResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/polls/{poll}": {
+            "get": {
+                "operationId": "admin.polls.show",
+                "description": "Returns a poll run with its season and captured snapshots.",
+                "summary": "Get a leaderboard poll",
+                "tags": [
+                    "Seasons - Admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "poll",
+                        "in": "path",
+                        "required": true,
+                        "description": "The poll ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`LeaderboardPollResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LeaderboardPollResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Use a Laravel Sanctum bearer token for protected endpoints.",
+                "scheme": "bearer"
+            }
+        },
+        "schemas": {
+            "AttachSeasonMapRequest": {
+                "type": "object",
+                "properties": {
+                    "map_id": {
+                        "type": "integer"
+                    },
+                    "order_index": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "map_id"
+                ],
+                "title": "AttachSeasonMapRequest"
+            },
+            "ClubMemberResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "trackmania_club_id": {
+                        "type": "integer"
+                    },
+                    "trackmania_player_id": {
+                        "type": "integer"
+                    },
+                    "joined_at": {
+                        "type": "string"
+                    },
+                    "synced_at": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "player": {
+                        "$ref": "#/components/schemas/TrackmaniaPlayerResource"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "trackmania_club_id",
+                    "trackmania_player_id",
+                    "joined_at",
+                    "synced_at",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ClubMemberResource"
+            },
+            "ImportMapRequest": {
+                "type": "object",
+                "properties": {
+                    "uid": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "uid"
+                ],
+                "title": "ImportMapRequest"
+            },
+            "LeaderboardPollResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "season_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "season": {
+                        "$ref": "#/components/schemas/SeasonResource"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "started_at": {
+                        "type": "string"
+                    },
+                    "finished_at": {
+                        "type": "string"
+                    },
+                    "maps_polled_count": {
+                        "type": "integer"
+                    },
+                    "players_processed_count": {
+                        "type": "integer"
+                    },
+                    "snapshot_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "error_message": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "season_id",
+                    "status",
+                    "started_at",
+                    "finished_at",
+                    "maps_polled_count",
+                    "players_processed_count",
+                    "error_message",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "LeaderboardPollResource"
+            },
+            "MapResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uid": {
+                        "type": "string"
+                    },
+                    "nadeo_map_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author_account_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "gold_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "silver_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "bronze_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "map_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "map_style": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "thumbnail_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "collection_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "uploaded_at": {
+                        "type": "string"
+                    },
+                    "source_updated_at": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    },
+                    "season_pivot": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "order_index": {
+                                "type": "string"
+                            },
+                            "is_active": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "order_index",
+                            "is_active"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "uid",
+                    "nadeo_map_id",
+                    "name",
+                    "author_account_id",
+                    "author_name",
+                    "author_time",
+                    "gold_time",
+                    "silver_time",
+                    "bronze_time",
+                    "map_type",
+                    "map_style",
+                    "thumbnail_url",
+                    "collection_name",
+                    "uploaded_at",
+                    "source_updated_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "MapResource"
+            },
+            "PointEventResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "season_id": {
+                        "type": "integer"
+                    },
+                    "map_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "map": {
+                        "$ref": "#/components/schemas/MapResource"
+                    },
+                    "trackmania_player_id": {
+                        "type": "integer"
+                    },
+                    "player": {
+                        "$ref": "#/components/schemas/TrackmaniaPlayerResource"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "points": {
+                        "type": "integer"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "metadata": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "season_id",
+                    "map_id",
+                    "trackmania_player_id",
+                    "type",
+                    "points",
+                    "description",
+                    "metadata",
+                    "created_at"
+                ],
+                "title": "PointEventResource"
+            },
+            "SeasonMapPlayerRecordResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "season_id": {
+                        "type": "integer"
+                    },
+                    "map_id": {
+                        "type": "integer"
+                    },
+                    "map": {
+                        "$ref": "#/components/schemas/MapResource"
+                    },
+                    "trackmania_player_id": {
+                        "type": "integer"
+                    },
+                    "player": {
+                        "$ref": "#/components/schemas/TrackmaniaPlayerResource"
+                    },
+                    "global_position": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "current_position": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "time_ms": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "baseline_time_ms": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "first_seen_at": {
+                        "type": "string"
+                    },
+                    "last_seen_at": {
+                        "type": "string"
+                    },
+                    "last_improved_at": {
+                        "type": "string"
+                    },
+                    "total_improvements": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "season_id",
+                    "map_id",
+                    "trackmania_player_id",
+                    "global_position",
+                    "current_position",
+                    "time_ms",
+                    "baseline_time_ms",
+                    "first_seen_at",
+                    "last_seen_at",
+                    "last_improved_at",
+                    "total_improvements",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "SeasonMapPlayerRecordResource"
+            },
+            "SeasonResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "starts_at": {
+                        "type": "string"
+                    },
+                    "ends_at": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "draft"
+                                ]
+                            }
+                        ]
+                    },
+                    "finalized_at": {
+                        "type": "string"
+                    },
+                    "finalized_by_user_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_by_user_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_by": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "discord_username": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "discord_username"
+                        ]
+                    },
+                    "maps": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MapResource"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "description",
+                    "starts_at",
+                    "ends_at",
+                    "status",
+                    "finalized_at",
+                    "finalized_by_user_id",
+                    "created_by_user_id",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "SeasonResource"
+            },
+            "StoreSeasonRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "starts_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "scheduled",
+                            "active",
+                            "ended",
+                            "finalized"
+                        ]
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "StoreSeasonRequest"
+            },
+            "SyncClubRequest": {
+                "type": "object",
+                "properties": {
+                    "club_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    }
+                },
+                "title": "SyncClubRequest"
+            },
+            "TrackmaniaClubResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "club_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "member_count": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "icon_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_primary": {
+                        "type": "boolean"
+                    },
+                    "last_synced_at": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "club_id",
+                    "name",
+                    "tag",
+                    "description",
+                    "member_count",
+                    "icon_url",
+                    "is_primary",
+                    "last_synced_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "TrackmaniaClubResource"
+            },
+            "TrackmaniaPlayerResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "account_id": {
+                        "type": "string"
+                    },
+                    "display_name": {
+                        "type": "string"
+                    },
+                    "zone_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "zone_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "last_seen_in_club_at": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "account_id",
+                    "display_name",
+                    "zone_id",
+                    "zone_name",
+                    "is_active",
+                    "last_seen_in_club_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "TrackmaniaPlayerResource"
+            },
+            "UpdateMapRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "author_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "map_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "map_style": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "collection_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "thumbnail_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri",
+                        "maxLength": 2048
+                    },
+                    "author_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "gold_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "silver_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "bronze_time": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    }
+                },
+                "title": "UpdateMapRequest"
+            },
+            "UpdateSeasonMapRequest": {
+                "type": "object",
+                "properties": {
+                    "order_index": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdateSeasonMapRequest"
+            },
+            "UpdateSeasonRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "starts_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "ends_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "scheduled",
+                            "active",
+                            "ended",
+                            "finalized"
+                        ]
+                    }
+                },
+                "title": "UpdateSeasonRequest"
+            }
+        },
+        "responses": {
+            "AuthenticationException": {
+                "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ModelNotFoundException": {
+                "description": "Not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

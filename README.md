@@ -108,6 +108,12 @@ Finalization is intentionally manual (`ended -> finalized`).
 
 Defined in [api/routes/api.php](./api/routes/api.php).
 
+OpenAPI documentation is generated with Scramble:
+
+- UI: `/docs/api`
+- JSON document: `/docs/api.json`
+- Static export: [docs/openapi.json](./docs/openapi.json)
+
 Public endpoints include:
 
 - `GET /api/seasons`
@@ -166,6 +172,7 @@ Backend:
 ```bash
 cd api
 php artisan test
+php artisan scramble:export --path=../docs/openapi.json
 php artisan schedule:list
 php artisan trackmania:test-map {mapUid}
 php artisan season:poll-active

@@ -3,15 +3,23 @@
 namespace App\Domains\Trackmania\Http\Controllers\Admin;
 
 use App\Domains\Trackmania\Exceptions\TrackmaniaClientException;
-use App\Http\Controllers\Controller;
 use App\Domains\Trackmania\Http\Requests\Admin\SyncClubRequest;
 use App\Domains\Trackmania\Http\Resources\TrackmaniaClubResource;
 use App\Domains\Trackmania\Models\TrackmaniaClub;
 use App\Domains\Trackmania\Services\TrackmaniaClubSyncService;
+use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+#[Group('Trackmania - Admin', description: 'Admin-only Trackmania club synchronization and management endpoints.', weight: 30)]
 class AdminClubController extends Controller
 {
+    /**
+     * Get the primary club.
+     *
+     * Returns the configured primary club, falling back to the oldest imported club when needed.
+     */
     public function primary(): TrackmaniaClubResource|JsonResponse
     {
         $club = $this->resolvePrimaryClub();
@@ -25,18 +33,35 @@ class AdminClubController extends Controller
         return new TrackmaniaClubResource($club);
     }
 
-    public function index()
+    /**
+     * List admin Trackmania clubs.
+     *
+     * Returns paginated clubs ordered by most recently imported first.
+     *
+     * @response AnonymousResourceCollection<TrackmaniaClubResource>
+     */
+    public function index(): AnonymousResourceCollection
     {
         return TrackmaniaClubResource::collection(
             TrackmaniaClub::query()->latest('id')->paginate(25)
         );
     }
 
+    /**
+     * Get an admin Trackmania club.
+     *
+     * Returns the selected club and admin-visible metadata.
+     */
     public function show(TrackmaniaClub $club): TrackmaniaClubResource
     {
         return new TrackmaniaClubResource($club);
     }
 
+    /**
+     * Sync a Trackmania club.
+     *
+     * Imports or updates club members from Trackmania services for the provided club ID.
+     */
     public function sync(SyncClubRequest $request, TrackmaniaClubSyncService $syncService): JsonResponse
     {
         $clubId = $request->string('club_id')->toString();
@@ -69,6 +94,11 @@ class AdminClubController extends Controller
         ]);
     }
 
+    /**
+     * Sync the primary Trackmania club.
+     *
+     * Uses the supplied club ID when present, otherwise syncs the configured primary club.
+     */
     public function syncPrimary(SyncClubRequest $request, TrackmaniaClubSyncService $syncService): JsonResponse
     {
         $clubId = $request->string('club_id')->toString();

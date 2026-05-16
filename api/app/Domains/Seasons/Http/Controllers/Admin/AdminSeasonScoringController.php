@@ -2,24 +2,30 @@
 
 namespace App\Domains\Seasons\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Activity\Http\Resources\PointEventResource;
 use App\Domains\Activity\Services\SeasonActivityFeedService;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Services\SeasonScoringService;
 use App\Domains\Seasons\Services\SeasonStandingsService;
+use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+#[Group('Seasons - Admin', description: 'Admin-only season lifecycle, map assignment, polling, scoring, and finalization endpoints.', weight: 50)]
 class AdminSeasonScoringController extends Controller
 {
+    /**
+     * Get admin season points.
+     *
+     * Returns calculated standings and total point event count for a season.
+     */
     public function standings(
         Season $season,
         SeasonStandingsService $standingsService,
         SeasonActivityFeedService $activityFeedService,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $standings = $standingsService->getStandings($season);
 
         return response()->json([
@@ -31,12 +37,18 @@ class AdminSeasonScoringController extends Controller
         ]);
     }
 
+    /**
+     * List admin season events.
+     *
+     * Returns paginated point events with optional player, map, and type filters.
+     *
+     * @response AnonymousResourceCollection<PointEventResource>
+     */
     public function events(
         Request $request,
         Season $season,
         SeasonActivityFeedService $activityFeedService,
-    ): AnonymousResourceCollection
-    {
+    ): AnonymousResourceCollection {
         $query = $activityFeedService->querySeasonEvents(
             season: $season,
             playerId: $request->filled('player_id') ? $request->integer('player_id') : null,
@@ -47,12 +59,16 @@ class AdminSeasonScoringController extends Controller
         return PointEventResource::collection($query->paginate(min($request->integer('per_page', 50), 100)));
     }
 
+    /**
+     * Recalculate season points.
+     *
+     * Rebuilds point events for a season and returns the updated event count.
+     */
     public function recalculate(
         Season $season,
         SeasonScoringService $scoringService,
         SeasonActivityFeedService $activityFeedService,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $scoringService->recalculate($season);
 
         return response()->json([

@@ -2,17 +2,24 @@
 
 namespace App\Domains\Seasons\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Seasons\Http\Resources\SeasonMapPlayerRecordResource;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
 use App\Domains\Seasons\Services\SeasonLeaderboardPollingService;
+use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+#[Group('Seasons - Admin', description: 'Admin-only season lifecycle, map assignment, polling, scoring, and finalization endpoints.', weight: 50)]
 class AdminSeasonPollController extends Controller
 {
+    /**
+     * Poll a season leaderboard.
+     *
+     * Fetches current leaderboard data for active season maps and persists snapshots and records.
+     */
     public function poll(Season $season, SeasonLeaderboardPollingService $pollingService): JsonResponse
     {
         if (! $season->canPoll()) {
@@ -39,6 +46,13 @@ class AdminSeasonPollController extends Controller
         ]);
     }
 
+    /**
+     * List season map records.
+     *
+     * Returns paginated player records for a season, optionally filtered by map or player.
+     *
+     * @response AnonymousResourceCollection<SeasonMapPlayerRecordResource>
+     */
     public function records(Request $request, Season $season): AnonymousResourceCollection
     {
         $query = SeasonMapPlayerRecord::query()

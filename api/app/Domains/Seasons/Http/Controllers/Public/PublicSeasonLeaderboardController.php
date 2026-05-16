@@ -2,17 +2,26 @@
 
 namespace App\Domains\Seasons\Http\Controllers\Public;
 
-use App\Http\Controllers\Controller;
-use App\Domains\Trackmania\Http\Resources\MapResource;
 use App\Domains\Seasons\Http\Resources\SeasonMapPlayerRecordResource;
 use App\Domains\Seasons\Http\Resources\SeasonResource;
-use App\Domains\Trackmania\Models\Map;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
+use App\Domains\Trackmania\Http\Resources\MapResource;
+use App\Domains\Trackmania\Models\Map;
+use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
+#[Group('Seasons - Public', description: 'Public season discovery, leaderboards, standings, and activity endpoints.', weight: 40)]
 class PublicSeasonLeaderboardController extends Controller
 {
+    /**
+     * Get public season leaderboard.
+     *
+     * Returns each active season map with ordered player records.
+     *
+     * @unauthenticated
+     */
     public function seasonLeaderboard(string $slug): JsonResponse
     {
         $season = Season::query()
@@ -49,6 +58,13 @@ class PublicSeasonLeaderboardController extends Controller
         ]);
     }
 
+    /**
+     * Get public map leaderboard.
+     *
+     * Returns ordered player records for one map within a season.
+     *
+     * @unauthenticated
+     */
     public function mapLeaderboard(string $slug, Map $map): JsonResponse
     {
         $season = Season::query()->where('slug', $slug)->firstOrFail();
