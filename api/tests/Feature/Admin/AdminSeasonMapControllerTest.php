@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Domains\Trackmania\Models\Map;
-use App\Domains\Seasons\Models\Season;
 use App\Domains\Identity\Models\User;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Trackmania\Models\Map;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

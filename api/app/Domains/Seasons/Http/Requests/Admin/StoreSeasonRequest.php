@@ -2,8 +2,8 @@
 
 namespace App\Domains\Seasons\Http\Requests\Admin;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreSeasonRequest extends FormRequest
 {

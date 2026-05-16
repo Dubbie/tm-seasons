@@ -2,15 +2,14 @@
 
 namespace App\Domains\Seasons\Services;
 
-use App\Domains\Trackmania\Models\Map;
-use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Activity\Services\SeasonPointEventWriteService;
+use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
 use App\Domains\Seasons\Models\SeasonStatus;
+use App\Domains\Trackmania\Models\Map;
 use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use App\Domains\Trackmania\Services\ActiveClubPlayerService;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class SeasonScoringService
@@ -114,7 +113,7 @@ class SeasonScoringService
                 continue;
             }
 
-            $milestoneKey = 'medal_' . $medal;
+            $milestoneKey = 'medal_'.$medal;
 
             if (in_array($milestoneKey, $existingMilestones, true)) {
                 continue;
@@ -130,7 +129,7 @@ class SeasonScoringService
                 player: $player,
                 type: $milestoneKey,
                 points: $points,
-                description: 'Earned ' . $medalLabel . ' medal',
+                description: 'Earned '.$medalLabel.' medal',
                 metadata: [
                     'time_ms' => $timeMs,
                     'medal' => $medal,

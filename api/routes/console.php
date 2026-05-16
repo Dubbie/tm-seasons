@@ -1,12 +1,12 @@
 <?php
 
-use App\Domains\Trackmania\Exceptions\TrackmaniaClientException;
-use App\Domains\Trackmania\Exceptions\TrackmaniaTokenException;
+use App\Domains\Identity\Models\User;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonStatus;
-use App\Domains\Seasons\Services\SeasonLifecycleService;
-use App\Domains\Identity\Models\User;
 use App\Domains\Seasons\Services\SeasonLeaderboardPollingService;
+use App\Domains\Seasons\Services\SeasonLifecycleService;
+use App\Domains\Trackmania\Exceptions\TrackmaniaClientException;
+use App\Domains\Trackmania\Exceptions\TrackmaniaTokenException;
 use App\Domains\Trackmania\Services\TrackmaniaClient;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;

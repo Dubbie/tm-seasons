@@ -2,16 +2,14 @@
 
 namespace App\Domains\Seasons\Models;
 
-use App\Domains\Trackmania\Models\Map;
-use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Activity\Models\PointEvent;
 use App\Domains\Identity\Models\User;
+use App\Domains\Trackmania\Models\Map;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
 
 class Season extends Model

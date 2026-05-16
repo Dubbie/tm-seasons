@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Domains\Identity\Models\User;
 use App\Domains\Trackmania\Exceptions\TrackmaniaClientException;
 use App\Domains\Trackmania\Models\Map;
-use App\Domains\Identity\Models\User;
 use App\Domains\Trackmania\Services\MapImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;

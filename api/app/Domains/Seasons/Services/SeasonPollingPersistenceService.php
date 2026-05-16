@@ -4,9 +4,9 @@ namespace App\Domains\Seasons\Services;
 
 use App\Domains\Seasons\Models\LeaderboardPoll;
 use App\Domains\Seasons\Models\LeaderboardSnapshot;
-use App\Domains\Trackmania\Models\Map;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
+use App\Domains\Trackmania\Models\Map;
 use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

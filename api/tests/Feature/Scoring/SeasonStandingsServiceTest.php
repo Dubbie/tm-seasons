@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Scoring;
 
-use App\Domains\Trackmania\Models\Map;
-use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Activity\Models\PointEvent;
+use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Seasons\Models\Season;
-use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use App\Domains\Seasons\Services\SeasonStandingsService;
+use App\Domains\Trackmania\Models\Map;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

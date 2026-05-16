@@ -2,15 +2,13 @@
 
 namespace Tests\Feature\Scoring;
 
-use App\Domains\Trackmania\Models\Map;
-use App\Domains\Activity\Models\PointEvent;
+use App\Domains\Identity\Models\User;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
 use App\Domains\Seasons\Models\SeasonStatus;
-use App\Domains\Trackmania\Models\TrackmaniaPlayer;
-use App\Domains\Identity\Models\User;
 use App\Domains\Seasons\Services\SeasonLifecycleService;
-use App\Domains\Seasons\Services\SeasonLeaderboardPollingService;
+use App\Domains\Trackmania\Models\Map;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

@@ -2,16 +2,15 @@
 
 namespace Tests\Feature\Scoring;
 
-use App\Domains\Trackmania\Models\ClubMember;
-use App\Domains\Trackmania\Models\Map;
-use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Activity\Models\PointEvent;
+use App\Domains\Activity\Services\SeasonPointEventWriteService;
+use App\Domains\Seasons\Models\PlayerMapMilestone;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
-use App\Domains\Trackmania\Models\TrackmaniaClub;
-use App\Domains\Trackmania\Models\TrackmaniaPlayer;
-use App\Domains\Activity\Services\SeasonPointEventWriteService;
 use App\Domains\Seasons\Services\SeasonScoringService;
+use App\Domains\Seasons\Services\SeasonStandingsService;
+use App\Domains\Trackmania\Models\Map;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use App\Domains\Trackmania\Services\ActiveClubPlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -33,8 +32,8 @@ class SeasonScoringServiceTest extends TestCase
         parent::setUp();
 
         $this->service = new SeasonScoringService(
-            new ActiveClubPlayerService(),
-            new SeasonPointEventWriteService(),
+            new ActiveClubPlayerService,
+            new SeasonPointEventWriteService,
         );
         $this->season = Season::query()->create(['name' => 'Test Season', 'is_active' => true]);
         $this->map = Map::query()->create([
@@ -265,7 +264,7 @@ class SeasonScoringServiceTest extends TestCase
 
         $this->service->evaluateNewRecord($this->season, $map2, $player2, 45000, 2, true);
 
-        $standingsService = new \App\Domains\Seasons\Services\SeasonStandingsService();
+        $standingsService = new SeasonStandingsService;
         $standings = $standingsService->getStandings($this->season);
 
         $this->assertCount(2, $standings);

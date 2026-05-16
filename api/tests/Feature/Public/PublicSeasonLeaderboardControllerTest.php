@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Public;
 
-use App\Domains\Trackmania\Models\Map;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
+use App\Domains\Trackmania\Models\Map;
 use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

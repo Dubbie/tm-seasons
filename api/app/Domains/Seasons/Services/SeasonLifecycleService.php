@@ -78,7 +78,7 @@ class SeasonLifecycleService
                 }
 
                 [$threshold, $points] = $reward;
-                $type = 'final_top_' . $threshold;
+                $type = 'final_top_'.$threshold;
 
                 $exists = $this->pointEventWriteService->eventExistsForPlayer($season, $playerId, $type);
 

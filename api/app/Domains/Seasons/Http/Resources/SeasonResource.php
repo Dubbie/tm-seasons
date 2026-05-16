@@ -2,8 +2,8 @@
 
 namespace App\Domains\Seasons\Http\Resources;
 
-use App\Domains\Trackmania\Http\Resources\MapResource;
 use App\Domains\Seasons\Models\Season;
+use App\Domains\Trackmania\Http\Resources\MapResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

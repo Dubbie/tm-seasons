@@ -2,9 +2,9 @@
 
 namespace App\Domains\Activity\Http\Resources;
 
+use App\Domains\Activity\Models\PointEvent;
 use App\Domains\Trackmania\Http\Resources\MapResource;
 use App\Domains\Trackmania\Http\Resources\TrackmaniaPlayerResource;
-use App\Domains\Activity\Models\PointEvent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

@@ -2,18 +2,18 @@
 
 namespace Tests\Feature\Seasons;
 
+use App\Domains\Seasons\Models\LeaderboardPoll;
+use App\Domains\Seasons\Models\LeaderboardSnapshot;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
+use App\Domains\Seasons\Services\SeasonLeaderboardPollingService;
+use App\Domains\Seasons\Services\SeasonScoringService;
 use App\Domains\Trackmania\Data\TrackmaniaLeaderboard;
 use App\Domains\Trackmania\Data\TrackmaniaLeaderboardEntry;
 use App\Domains\Trackmania\Models\ClubMember;
-use App\Domains\Seasons\Models\LeaderboardPoll;
-use App\Domains\Seasons\Models\LeaderboardSnapshot;
 use App\Domains\Trackmania\Models\Map;
-use App\Domains\Seasons\Models\Season;
-use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
 use App\Domains\Trackmania\Models\TrackmaniaClub;
 use App\Domains\Trackmania\Models\TrackmaniaPlayer;
-use App\Domains\Seasons\Services\SeasonLeaderboardPollingService;
-use App\Domains\Seasons\Services\SeasonScoringService;
 use App\Domains\Trackmania\Services\TrackmaniaClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;

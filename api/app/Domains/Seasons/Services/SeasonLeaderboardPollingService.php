@@ -5,7 +5,6 @@ namespace App\Domains\Seasons\Services;
 use App\Domains\Seasons\Models\LeaderboardPoll;
 use App\Domains\Seasons\Models\Season;
 use App\Domains\Trackmania\Models\ClubMember;
-use App\Domains\Trackmania\Models\Map;
 use App\Domains\Trackmania\Models\TrackmaniaClub;
 use App\Domains\Trackmania\Models\TrackmaniaPlayer;
 use App\Domains\Trackmania\Services\TrackmaniaClient;
@@ -93,12 +92,12 @@ class SeasonLeaderboardPollingService
 
                     $updated = ($this->pollingPersistenceService ?? app(SeasonPollingPersistenceService::class))
                         ->updatePlayerRecordAndScore(
-                        $season,
-                        $map,
-                        $player,
-                        $rankedEntry,
-                        $this->scoringService,
-                    );
+                            $season,
+                            $map,
+                            $player,
+                            $rankedEntry,
+                            $this->scoringService,
+                        );
 
                     if ($updated) {
                         $recordsUpdated++;
@@ -203,5 +202,4 @@ class SeasonLeaderboardPollingService
             return $entry;
         })->toArray();
     }
-
 }
