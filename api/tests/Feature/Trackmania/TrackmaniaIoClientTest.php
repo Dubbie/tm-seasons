@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Trackmania;
 
-use App\Services\Trackmania\TrackmaniaIoClient;
+use App\Domains\Trackmania\Services\TrackmaniaIoClient;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

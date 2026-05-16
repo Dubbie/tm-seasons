@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Trackmania;
 
-use App\Exceptions\Trackmania\TrackmaniaClientException;
-use App\Exceptions\Trackmania\TrackmaniaTokenException;
-use App\Services\Trackmania\TrackmaniaClient;
-use App\Services\Trackmania\TrackmaniaTokenService;
+use App\Domains\Trackmania\Exceptions\TrackmaniaClientException;
+use App\Domains\Trackmania\Exceptions\TrackmaniaTokenException;
+use App\Domains\Trackmania\Services\TrackmaniaClient;
+use App\Domains\Trackmania\Services\TrackmaniaTokenService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\LeaderboardPoll;
-use App\Models\Season;
-use App\Models\User;
+use App\Domains\Seasons\Models\LeaderboardPoll;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Identity\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

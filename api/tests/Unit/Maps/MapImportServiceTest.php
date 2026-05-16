@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Maps;
 
-use App\DTOs\Trackmania\TrackmaniaMap;
-use App\Services\Maps\MapImportService;
-use App\Services\Trackmania\TrackmaniaClient;
+use App\Domains\Trackmania\Data\TrackmaniaMap;
+use App\Domains\Trackmania\Services\MapImportService;
+use App\Domains\Trackmania\Services\TrackmaniaClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;

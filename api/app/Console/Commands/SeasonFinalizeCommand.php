@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Season;
-use App\Models\SeasonStatus;
-use App\Services\Scoring\SeasonLifecycleService;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Seasons\Models\SeasonStatus;
+use App\Domains\Seasons\Services\SeasonLifecycleService;
 use Illuminate\Console\Command;
 
 class SeasonFinalizeCommand extends Command

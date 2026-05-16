@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\ClubMember;
-use App\Models\TrackmaniaPlayer;
-use App\Models\User;
+use App\Domains\Trackmania\Models\ClubMember;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
+use App\Domains\Identity\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

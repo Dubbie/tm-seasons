@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Trackmania;
 
-use App\Models\ClubMember;
-use App\Models\TrackmaniaClub;
-use App\Models\TrackmaniaPlayer;
-use App\Services\Trackmania\TrackmaniaClient;
-use App\Services\Trackmania\TrackmaniaClubSyncService;
-use App\Services\Trackmania\TrackmaniaIoClient;
+use App\Domains\Trackmania\Models\ClubMember;
+use App\Domains\Trackmania\Models\TrackmaniaClub;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
+use App\Domains\Trackmania\Services\TrackmaniaClient;
+use App\Domains\Trackmania\Services\TrackmaniaClubSyncService;
+use App\Domains\Trackmania\Services\TrackmaniaIoClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;

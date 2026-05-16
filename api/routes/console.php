@@ -1,13 +1,13 @@
 <?php
 
-use App\Exceptions\Trackmania\TrackmaniaClientException;
-use App\Exceptions\Trackmania\TrackmaniaTokenException;
-use App\Models\Season;
-use App\Models\SeasonStatus;
-use App\Services\Scoring\SeasonLifecycleService;
-use App\Models\User;
-use App\Services\Trackmania\SeasonLeaderboardPollingService;
-use App\Services\Trackmania\TrackmaniaClient;
+use App\Domains\Trackmania\Exceptions\TrackmaniaClientException;
+use App\Domains\Trackmania\Exceptions\TrackmaniaTokenException;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Seasons\Models\SeasonStatus;
+use App\Domains\Seasons\Services\SeasonLifecycleService;
+use App\Domains\Identity\Models\User;
+use App\Domains\Seasons\Services\SeasonLeaderboardPollingService;
+use App\Domains\Trackmania\Services\TrackmaniaClient;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -70,7 +70,7 @@ Artisan::command('season:poll {seasonId}', function (string $seasonId): int {
     $this->info('Season poll completed.');
     $this->line(sprintf('Maps processed: %d / %d', $result['maps_processed'], $result['total_maps']));
     $this->line(sprintf('Snapshots created: %d', $result['snapshots_created']));
-    $this->line(sprintf('Improvements detected: %d', $result['improvements_detected']));
+    $this->line(sprintf('Records updated: %d', $result['records_updated']));
 
     if ($result['map_errors'] !== []) {
         $this->warn(sprintf('Map errors: %d', count($result['map_errors'])));

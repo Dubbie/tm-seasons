@@ -26,6 +26,20 @@ The app lets admins run seasonal competitions on selected Trackmania maps and gi
   - `point_events` (auditable scoring log)
   - `leaderboard_polls`, `leaderboard_snapshots`
 
+Domain documentation:
+
+- [docs/domains/README.md](./docs/domains/README.md)
+
+### Domain Ownership Map
+
+| Domain | Owns | Key Models | Key Services | Route File |
+| --- | --- | --- | --- | --- |
+| Identity | Authentication, current-user profile, admin gate | `User` | `EnsureUserIsAdmin` (middleware), `DiscordAuthController` | `api/routes/domains/identity.php` |
+| Trackmania | Clubs, members, players, maps, external Trackmania data integration | `TrackmaniaClub`, `ClubMember`, `TrackmaniaPlayer`, `Map` | `TrackmaniaClient`, `TrackmaniaTokenService`, `TrackmaniaIoClient`, `TrackmaniaClubSyncService`, `MapImportService`, `ActiveClubPlayerService` | `api/routes/domains/trackmania.php` |
+| Seasons | Season lifecycle, map assignment, polling, polls/snapshots, standings APIs | `Season`, `SeasonStatus`, `LeaderboardPoll`, `LeaderboardSnapshot`, `SeasonMapPlayerRecord`, `PlayerMapMilestone` | `SeasonLifecycleService`, `SeasonLeaderboardPollingService`, `SeasonScoringService`, `SeasonStandingsService`, `SeasonPollingPersistenceService` | `api/routes/domains/seasons.php` |
+| Activity | Scoring event ledger and activity/stat query support | `PointEvent` | `SeasonActivityFeedService`, `SeasonActivityStatsService`, `SeasonPointEventWriteService` | `api/routes/domains/activity.php` |
+| Integrations | Future external adapters (bot/overlay/plugin/webhooks) | _(planned)_ | _(planned)_ | `api/routes/domains/integrations.php` |
+
 ## External APIs and integrations
 
 Important: this project uses two similarly named but different Trackmania APIs.
@@ -58,7 +72,7 @@ Used for player/account detail enrichment (for example display names and zone in
 
 ## Scoring model
 
-Configured in [api/config/season_scoring.php](./api/config/season_scoring.php):
+Configured in [api/config/seasons.php](./api/config/seasons.php) under `scoring`:
 
 - `first_finish`: 10 points
 - Medal rewards:

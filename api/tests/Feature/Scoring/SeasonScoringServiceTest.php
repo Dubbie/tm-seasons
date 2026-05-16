@@ -2,15 +2,17 @@
 
 namespace Tests\Feature\Scoring;
 
-use App\Models\ClubMember;
-use App\Models\Map;
-use App\Models\PlayerMapMilestone;
-use App\Models\PointEvent;
-use App\Models\Season;
-use App\Models\SeasonMapPlayerRecord;
-use App\Models\TrackmaniaClub;
-use App\Models\TrackmaniaPlayer;
-use App\Services\Scoring\SeasonScoringService;
+use App\Domains\Trackmania\Models\ClubMember;
+use App\Domains\Trackmania\Models\Map;
+use App\Domains\Seasons\Models\PlayerMapMilestone;
+use App\Domains\Activity\Models\PointEvent;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
+use App\Domains\Trackmania\Models\TrackmaniaClub;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
+use App\Domains\Activity\Services\SeasonPointEventWriteService;
+use App\Domains\Seasons\Services\SeasonScoringService;
+use App\Domains\Trackmania\Services\ActiveClubPlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -30,7 +32,10 @@ class SeasonScoringServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service = new SeasonScoringService();
+        $this->service = new SeasonScoringService(
+            new ActiveClubPlayerService(),
+            new SeasonPointEventWriteService(),
+        );
         $this->season = Season::query()->create(['name' => 'Test Season', 'is_active' => true]);
         $this->map = Map::query()->create([
             'uid' => 'map-1',
@@ -130,21 +135,6 @@ class SeasonScoringServiceTest extends TestCase
         $this->assertSame(1, PointEvent::query()->where('type', 'medal_bronze')->count());
         $this->assertSame(1, PointEvent::query()->where('type', 'medal_silver')->count());
         $this->assertSame(1, PointEvent::query()->where('type', 'medal_gold')->count());
-    }
-
-    public function test_position_rewards_awarded_on_finalize(): void
-    {
-        $this->markTestSkipped('Final position rewards are handled by SeasonLifecycleService finalization.');
-    }
-
-    public function test_finalize_awards_position_based_on_final_leaderboard(): void
-    {
-        $this->markTestSkipped('Final position rewards are handled by SeasonLifecycleService finalization.');
-    }
-
-    public function test_finalize_is_idempotent(): void
-    {
-        $this->markTestSkipped('Final position rewards are handled by SeasonLifecycleService finalization.');
     }
 
     public function test_strong_first_attempt_rewarded_correctly(): void
@@ -275,7 +265,7 @@ class SeasonScoringServiceTest extends TestCase
 
         $this->service->evaluateNewRecord($this->season, $map2, $player2, 45000, 2, true);
 
-        $standingsService = new \App\Services\Scoring\SeasonStandingsService();
+        $standingsService = new \App\Domains\Seasons\Services\SeasonStandingsService();
         $standings = $standingsService->getStandings($this->season);
 
         $this->assertCount(2, $standings);

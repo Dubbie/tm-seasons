@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Map;
-use App\Models\SeasonMapPlayerRecord;
-use App\Models\TrackmaniaPlayer;
-use App\Models\Season;
-use App\Models\User;
+use App\Domains\Trackmania\Models\Map;
+use App\Domains\Seasons\Models\SeasonMapPlayerRecord;
+use App\Domains\Trackmania\Models\TrackmaniaPlayer;
+use App\Domains\Seasons\Models\Season;
+use App\Domains\Identity\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Trackmania;
 
-use App\DTOs\Trackmania\TrackmaniaLeaderboard;
-use App\DTOs\Trackmania\TrackmaniaMap;
+use App\Domains\Trackmania\Data\TrackmaniaLeaderboard;
+use App\Domains\Trackmania\Data\TrackmaniaMap;
 use PHPUnit\Framework\TestCase;
 
 class TrackmaniaDtoMappingTest extends TestCase
